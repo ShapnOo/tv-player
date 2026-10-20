@@ -1,14 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/media.dart';
 
 class ApiService extends ChangeNotifier {
   static const String _defaultIp = '10.81.100.62';
   static const int _defaultPort = 5050;
-  static const String _prefKeyBaseUrl = 'saved_base_url';
 
   // Candidate hosts for auto-discovery
   static const List<String> _candidateHosts = [
@@ -27,6 +26,7 @@ class ApiService extends ChangeNotifier {
   ServerInfo? _serverInfo;
   List<MovieItem> _movies = [];
   List<SeriesItem> _series = [];
+  final Map<String, WatchProgress> _progressMap = {};
 
   String get baseUrl => _baseUrl;
   bool get isConnected => _isConnected;
@@ -35,16 +35,65 @@ class ApiService extends ChangeNotifier {
   ServerInfo? get serverInfo => _serverInfo;
   List<MovieItem> get movies => _movies;
   List<SeriesItem> get series => _series;
+  Map<String, WatchProgress> get progressMap => _progressMap;
+
+  WatchProgress? getProgress(String id) => _progressMap[id];
+  bool isWatched(String id) => _progressMap[id]?.isWatched ?? false;
+
+  List<MovieItem> get continueWatchingMovies {
+    final list = _movies.where((m) => getProgress(m.id)?.inProgress == true).toList();
+    list.sort((a, b) {
+      final pA = getProgress(a.id)?.updatedAt ?? 0;
+      final pB = getProgress(b.id)?.updatedAt ?? 0;
+      return pB.compareTo(pA);
+    });
+    return list;
+  }
+
+  List<EpisodeItem> get continueWatchingEpisodes {
+    final List<EpisodeItem> allEps = [];
+    for (final s in _series) {
+      allEps.addAll(s.episodes.where((e) => getProgress(e.id)?.inProgress == true));
+    }
+    allEps.sort((a, b) {
+      final pA = getProgress(a.id)?.updatedAt ?? 0;
+      final pB = getProgress(b.id)?.updatedAt ?? 0;
+      return pB.compareTo(pA);
+    });
+    return allEps;
+  }
 
   ApiService() {
     _init();
   }
 
+  Future<File?> _getLocalConfigFile() async {
+    try {
+      final appDir = Directory('/data/user/0/com.shapno.tv.shapno_tv/files');
+      if (!appDir.existsSync()) {
+        appDir.createSync(recursive: true);
+      }
+      return File('${appDir.path}/saved_server.txt');
+    } catch (_) {
+      try {
+        final tmpDir = Directory.systemTemp;
+        return File('${tmpDir.path}/shapno_saved_server.txt');
+      } catch (_) {}
+    }
+    return null;
+  }
+
   Future<void> _init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(_prefKeyBaseUrl);
-    if (saved != null && saved.isNotEmpty) {
-      _baseUrl = saved;
+    try {
+      final file = await _getLocalConfigFile();
+      if (file != null && await file.exists()) {
+        final saved = (await file.readAsString()).trim();
+        if (saved.isNotEmpty) {
+          _baseUrl = saved;
+        }
+      }
+    } catch (e) {
+      debugPrint('[ApiService] Error reading saved config: $e');
     }
     await checkAndLoad();
   }
@@ -58,8 +107,16 @@ class ApiService extends ChangeNotifier {
       cleanUrl = cleanUrl.substring(0, cleanUrl.length - 1);
     }
     _baseUrl = cleanUrl;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefKeyBaseUrl, _baseUrl);
+
+    try {
+      final file = await _getLocalConfigFile();
+      if (file != null) {
+        await file.writeAsString(_baseUrl);
+      }
+    } catch (e) {
+      debugPrint('[ApiService] Error saving config: $e');
+    }
+
     await checkAndLoad();
   }
 
@@ -109,8 +166,12 @@ class ApiService extends ChangeNotifier {
       // If an active URL was discovered or confirmed
       if (activeUrl != null) {
         _baseUrl = activeUrl;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_prefKeyBaseUrl, _baseUrl);
+        try {
+          final file = await _getLocalConfigFile();
+          if (file != null) {
+            await file.writeAsString(_baseUrl);
+          }
+        } catch (_) {}
 
         // Fetch Server Info
         final infoResp = await http.get(Uri.parse('$_baseUrl/api/server-info')).timeout(const Duration(seconds: 5));
@@ -130,6 +191,9 @@ class ApiService extends ChangeNotifier {
           _series = rawSeries.map((s) => SeriesItem.fromJson(s)).toList();
           _isConnected = true;
           _errorMessage = '';
+
+          // Fetch Watch Progress / History from Server & Local Cache
+          await fetchProgress();
         }
       } else {
         _isConnected = false;
@@ -144,6 +208,118 @@ class ApiService extends ChangeNotifier {
     }
 
     return _isConnected;
+  }
+
+  Future<File?> _getLocalProgressFile() async {
+    try {
+      final appDir = Directory('/data/user/0/com.shapno.tv.shapno_tv/files');
+      if (!appDir.existsSync()) {
+        appDir.createSync(recursive: true);
+      }
+      return File('${appDir.path}/saved_progress.json');
+    } catch (_) {
+      try {
+        final tmpDir = Directory.systemTemp;
+        return File('${tmpDir.path}/shapno_saved_progress.json');
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  Future<void> fetchProgress() async {
+    // 1. Load local cache first for instant offline response
+    try {
+      final file = await _getLocalProgressFile();
+      if (file != null && await file.exists()) {
+        final raw = await file.readAsString();
+        final Map<String, dynamic> data = jsonDecode(raw);
+        data.forEach((k, v) {
+          if (v is Map<String, dynamic>) {
+            _progressMap[k] = WatchProgress.fromJson(v);
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('[ApiService] Local progress load notice: $e');
+    }
+
+    // 2. Fetch fresh watch progress from server
+    if (!_isConnected) return;
+    try {
+      final url = Uri.parse('$_baseUrl/api/progress');
+      final resp = await http.get(url).timeout(const Duration(seconds: 4));
+      if (resp.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(resp.body);
+        data.forEach((k, v) {
+          if (v is Map<String, dynamic>) {
+            _progressMap[k] = WatchProgress.fromJson(v);
+          }
+        });
+
+        // Update local file cache
+        final file = await _getLocalProgressFile();
+        if (file != null) {
+          final Map<String, dynamic> toSave = {};
+          _progressMap.forEach((k, v) => toSave[k] = v.toJson());
+          await file.writeAsString(jsonEncode(toSave));
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[ApiService] Server progress sync notice: $e');
+    }
+  }
+
+  Future<void> saveProgress(
+    String id,
+    int pos,
+    int dur, {
+    String title = '',
+    String seriesTitle = '',
+  }) async {
+    if (id.isEmpty) return;
+    final isWatched = dur > 0 ? (pos / dur >= 0.9) : false;
+    final prog = WatchProgress(
+      id: id,
+      posSeconds: pos,
+      durSeconds: dur,
+      isWatched: isWatched,
+      title: title,
+      seriesTitle: seriesTitle,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    _progressMap[id] = prog;
+    notifyListeners();
+
+    // 1. Asynchronously send to server
+    try {
+      if (_isConnected) {
+        final url = Uri.parse('$_baseUrl/api/progress/$id');
+        http
+            .post(
+              url,
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'pos': pos,
+                'dur': dur,
+                'title': title,
+                'seriesTitle': seriesTitle,
+              }),
+            )
+            .timeout(const Duration(seconds: 3))
+            .catchError((_) => http.Response('', 500));
+      }
+    } catch (_) {}
+
+    // 2. Update local disk file
+    try {
+      final file = await _getLocalProgressFile();
+      if (file != null) {
+        final Map<String, dynamic> toSave = {};
+        _progressMap.forEach((k, v) => toSave[k] = v.toJson());
+        await file.writeAsString(jsonEncode(toSave));
+      }
+    } catch (_) {}
   }
 
   Future<SeriesItem?> fetchSeriesDetails(String id) async {

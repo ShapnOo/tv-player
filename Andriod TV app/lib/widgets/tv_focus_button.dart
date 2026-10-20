@@ -10,6 +10,10 @@ class TVFocusButton extends StatefulWidget {
   final bool isPrimary;
   final FocusNode? focusNode;
   final bool autoFocus;
+  final EdgeInsetsGeometry? padding;
+  final double? fontSize;
+  final double? iconSize;
+  final double borderRadius;
 
   const TVFocusButton({
     super.key,
@@ -19,6 +23,10 @@ class TVFocusButton extends StatefulWidget {
     this.isPrimary = true,
     this.focusNode,
     this.autoFocus = false,
+    this.padding,
+    this.fontSize,
+    this.iconSize,
+    this.borderRadius = 8.0,
   });
 
   @override
@@ -34,6 +42,22 @@ class _TVFocusButtonState extends State<TVFocusButton> {
     super.initState();
     _node = widget.focusNode ?? FocusNode();
     _node.addListener(_handleFocusChange);
+    _isFocused = _node.hasFocus;
+  }
+
+  @override
+  void didUpdateWidget(TVFocusButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.focusNode != oldWidget.focusNode) {
+      if (oldWidget.focusNode == null) {
+        _node.dispose();
+      } else {
+        oldWidget.focusNode!.removeListener(_handleFocusChange);
+      }
+      _node = widget.focusNode ?? FocusNode();
+      _node.addListener(_handleFocusChange);
+      _isFocused = _node.hasFocus;
+    }
   }
 
   void _handleFocusChange() {
@@ -56,15 +80,26 @@ class _TVFocusButtonState extends State<TVFocusButton> {
 
   @override
   Widget build(BuildContext context) {
+    // Authentic Netflix styling:
+    // Primary: White background with black text (turns glowing Emerald when focused)
+    // Secondary: Translucent glass with white text (turns solid White with black text when focused)
     final bgColor = _isFocused
         ? (widget.isPrimary ? TVTheme.emerald : Colors.white)
         : (widget.isPrimary
-              ? Colors.white.withValues(alpha: 0.12)
-              : Colors.black.withValues(alpha: 0.4));
+            ? Colors.white
+            : Colors.white.withValues(alpha: 0.18));
 
     final textColor = _isFocused
-        ? (widget.isPrimary ? Colors.black : Colors.black)
-        : Colors.white;
+        ? Colors.black
+        : (widget.isPrimary ? Colors.black : Colors.white);
+
+    final effectivePadding = widget.padding ??
+        (widget.isPrimary
+            ? const EdgeInsets.symmetric(horizontal: 16, vertical: 7.5)
+            : const EdgeInsets.symmetric(horizontal: 12, vertical: 6.5));
+
+    final effectiveFontSize = widget.fontSize ?? (widget.isPrimary ? 13.0 : 12.0);
+    final effectiveIconSize = widget.iconSize ?? (widget.isPrimary ? 18.0 : 15.0);
 
     return Focus(
       focusNode: _node,
@@ -84,20 +119,20 @@ class _TVFocusButtonState extends State<TVFocusButton> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedScale(
-          scale: _isFocused ? 1.08 : 1.0,
-          duration: const Duration(milliseconds: 150),
+          scale: _isFocused ? 1.07 : 1.0,
+          duration: const Duration(milliseconds: 140),
           curve: Curves.easeOutCubic,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            duration: const Duration(milliseconds: 140),
+            padding: effectivePadding,
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(widget.borderRadius),
               border: Border.all(
                 color: _isFocused
                     ? Colors.white
-                    : Colors.white.withValues(alpha: 0.15),
-                width: _isFocused ? 2.5 : 1.0,
+                    : Colors.white.withValues(alpha: 0.18),
+                width: _isFocused ? 2.0 : 1.0,
               ),
               boxShadow: _isFocused
                   ? [
@@ -109,23 +144,31 @@ class _TVFocusButtonState extends State<TVFocusButton> {
                         spreadRadius: 2,
                       ),
                     ]
-                  : [],
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 6,
+                      ),
+                    ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (widget.icon != null) ...[
                   IconTheme(
-                    data: IconThemeData(color: textColor, size: 18),
+                    data: IconThemeData(
+                      color: textColor,
+                      size: effectiveIconSize,
+                    ),
                     child: widget.icon!,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                 ],
                 Text(
                   widget.label,
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 15,
+                    fontSize: effectiveFontSize,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.3,
                   ),

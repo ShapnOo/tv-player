@@ -69,5 +69,6 @@ Media/**/*
 
 # Logs & Temporary files
 *.log
+.progress.json
 .tempmediaStorage/
 scratch/

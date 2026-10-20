@@ -323,6 +323,21 @@ class ShapnoPlayer {
       if (this.currentItem) {
         localStorage.setItem(`cinedata_pos_${this.currentItem.id}`, current.toString());
         localStorage.setItem(`cinedata_dur_${this.currentItem.id}`, duration.toString());
+
+        // Sync with server progress API for cross-device continuation (TV + Web)
+        const now = Date.now();
+        if (!this._lastServerSync || (now - this._lastServerSync > 5000)) {
+          this._lastServerSync = now;
+          fetch(`/api/progress/${this.currentItem.id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              pos: Math.round(current),
+              dur: Math.round(duration),
+              title: this.currentItem.cleanTitle || this.currentItem.title,
+            }),
+          }).catch(() => {});
+        }
       }
     }
   }

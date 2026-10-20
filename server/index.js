@@ -267,6 +267,56 @@ app.get('/api/media', (req, res) => {
   });
 });
 
+// Watch Progress & History persistence (Netflix-style cross-device tracking)
+const PROGRESS_FILE = path.join(__dirname, '..', '.progress.json');
+let watchProgress = {};
+try {
+  if (fs.existsSync(PROGRESS_FILE)) {
+    watchProgress = JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf8'));
+  }
+} catch (e) {
+  watchProgress = {};
+}
+
+function saveWatchProgress() {
+  try {
+    fs.writeFileSync(PROGRESS_FILE, JSON.stringify(watchProgress, null, 2), 'utf8');
+  } catch (e) {}
+}
+
+app.get('/api/progress', (req, res) => {
+  res.json(watchProgress);
+});
+
+app.get('/api/progress/:id', (req, res) => {
+  const p = watchProgress[req.params.id] || { pos: 0, dur: 0, watched: false, updatedAt: 0 };
+  res.json(p);
+});
+
+app.post('/api/progress/:id', (req, res) => {
+  const { id } = req.params;
+  const { pos = 0, dur = 0, title = '', seriesTitle = '' } = req.body || {};
+  const posSec = Math.round(Number(pos) || 0);
+  const durSec = Math.round(Number(dur) || 0);
+
+  if (posSec < 5 && !watchProgress[id]) {
+    return res.json({ success: true, progress: null });
+  }
+
+  const isWatched = durSec > 0 ? (posSec / durSec >= 0.9) : false;
+  watchProgress[id] = {
+    id,
+    pos: posSec,
+    dur: durSec,
+    watched: isWatched,
+    title: title || (watchProgress[id]?.title || ''),
+    seriesTitle: seriesTitle || (watchProgress[id]?.seriesTitle || ''),
+    updatedAt: Date.now()
+  };
+  saveWatchProgress();
+  res.json({ success: true, progress: watchProgress[id] });
+});
+
 app.get('/series/:id', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'series.html'));
 });

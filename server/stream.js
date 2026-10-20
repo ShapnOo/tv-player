@@ -7,7 +7,7 @@ const MIME_TYPES = {
   '.m4v': 'video/mp4',
   '.webm': 'video/webm',
   '.mov': 'video/quicktime',
-  '.mkv': 'video/webm',
+  '.mkv': 'video/x-matroska',
   '.avi': 'video/x-msvideo'
 };
 

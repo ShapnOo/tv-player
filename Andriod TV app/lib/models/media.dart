@@ -178,3 +178,69 @@ class SeriesItem {
     return '';
   }
 }
+
+class WatchProgress {
+  final String id;
+  final int posSeconds;
+  final int durSeconds;
+  final bool isWatched;
+  final String title;
+  final String seriesTitle;
+  final int updatedAt;
+
+  WatchProgress({
+    required this.id,
+    required this.posSeconds,
+    required this.durSeconds,
+    required this.isWatched,
+    this.title = '',
+    this.seriesTitle = '',
+    required this.updatedAt,
+  });
+
+  double get fraction =>
+      durSeconds > 0 ? (posSeconds / durSeconds).clamp(0.0, 1.0) : 0.0;
+
+  int get percent => (fraction * 100).round();
+
+  bool get inProgress => posSeconds > 15 && !isWatched && fraction < 0.92;
+
+  String formatTime(int totalSeconds) {
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+    if (hours > 0) {
+      return '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    }
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  factory WatchProgress.fromJson(Map<String, dynamic> json) {
+    return WatchProgress(
+      id: json['id']?.toString() ?? '',
+      posSeconds: json['pos'] is int
+          ? json['pos']
+          : (json['pos'] as num?)?.toInt() ?? 0,
+      durSeconds: json['dur'] is int
+          ? json['dur']
+          : (json['dur'] as num?)?.toInt() ?? 0,
+      isWatched: json['watched'] == true,
+      title: json['title']?.toString() ?? '',
+      seriesTitle: json['seriesTitle']?.toString() ?? '',
+      updatedAt: json['updatedAt'] is int
+          ? json['updatedAt']
+          : (json['updatedAt'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'pos': posSeconds,
+        'dur': durSeconds,
+        'watched': isWatched,
+        'title': title,
+        'seriesTitle': seriesTitle,
+        'updatedAt': updatedAt,
+      };
+}
+

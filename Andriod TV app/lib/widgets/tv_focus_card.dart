@@ -22,8 +22,8 @@ class TVFocusCard extends StatefulWidget {
     this.onFocusChange,
     required this.width,
     required this.height,
-    this.borderRadius = 12.0,
-    this.scaleFactor = 1.06,
+    this.borderRadius = 14.0,
+    this.scaleFactor = 1.04,
     this.focusBorderColor = TVTheme.emerald,
     this.focusNode,
     this.autoFocus = false,
@@ -42,6 +42,22 @@ class _TVFocusCardState extends State<TVFocusCard> {
     super.initState();
     _node = widget.focusNode ?? FocusNode();
     _node.addListener(_handleFocusChange);
+    _isFocused = _node.hasFocus;
+  }
+
+  @override
+  void didUpdateWidget(TVFocusCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.focusNode != oldWidget.focusNode) {
+      if (oldWidget.focusNode == null) {
+        _node.dispose();
+      } else {
+        oldWidget.focusNode!.removeListener(_handleFocusChange);
+      }
+      _node = widget.focusNode ?? FocusNode();
+      _node.addListener(_handleFocusChange);
+      _isFocused = _node.hasFocus;
+    }
   }
 
   void _handleFocusChange() {
