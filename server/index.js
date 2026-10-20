@@ -317,19 +317,27 @@ app.get('/api/apps/download/:fileName', (req, res) => {
   res.download(filePath, fileName);
 });
 
+// Helper to find the latest APK in Media/mobile app/
+function getLatestApk() {
+  if (!fs.existsSync(APPS_DIR)) return null;
+  const files = fs.readdirSync(APPS_DIR)
+    .filter(f => f.toLowerCase().endsWith('.apk') && !f.startsWith('.'))
+    .map(f => {
+      const fullPath = path.join(APPS_DIR, f);
+      const stat = fs.statSync(fullPath);
+      return { file: f, fullPath, mtime: stat.mtime };
+    })
+    .sort((a, b) => b.mtime - a.mtime);
+  return files.length > 0 ? files[0] : null;
+}
+
 // Ultra-short URL for typing easily on TV remotes or in "Downloader" app: http://<ip>:5050/d
 app.get('/d', (req, res) => {
-  const defaultApk = path.join(APPS_DIR, 'Shapno-AndroidTV.apk');
-  if (fs.existsSync(defaultApk)) {
+  const latest = getLatestApk();
+  if (latest && fs.existsSync(latest.fullPath)) {
     res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-    res.setHeader('Content-Disposition', 'attachment; filename="Shapno-AndroidTV.apk"');
-    return res.download(defaultApk, 'Shapno-AndroidTV.apk');
-  }
-  const files = fs.readdirSync(APPS_DIR).filter(f => f.toLowerCase().endsWith('.apk'));
-  if (files.length > 0) {
-    const fPath = path.join(APPS_DIR, files[0]);
-    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-    return res.download(fPath, files[0]);
+    res.setHeader('Content-Disposition', `attachment; filename="${latest.file}"`);
+    return res.download(latest.fullPath, latest.file);
   }
   res.status(404).send('No APK found in Media/mobile app/');
 });
@@ -343,11 +351,14 @@ app.post('/api/install-tv', (req, res) => {
 
   const cleanIp = tvIp.trim();
   const adbPath = '/Users/shapno/Library/Android/sdk/platform-tools/adb';
-  const apkPath = path.join(APPS_DIR, 'Shapno-AndroidTV.apk');
+  const latest = getLatestApk();
 
-  if (!fs.existsSync(apkPath)) {
-    return res.status(404).json({ success: false, error: 'Shapno-AndroidTV.apk not found in Media/mobile app/' });
+  if (!latest || !fs.existsSync(latest.fullPath)) {
+    return res.status(404).json({ success: false, error: 'No APK found in Media/mobile app/' });
   }
+
+  const apkPath = latest.fullPath;
+
 
   console.log(`[TV Installer] Connecting to TV at ${cleanIp}:5555...`);
 
