@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../theme/tv_theme.dart';
 
@@ -43,6 +44,9 @@ class _TVFocusCardState extends State<TVFocusCard> {
     _node = widget.focusNode ?? FocusNode();
     _node.addListener(_handleFocusChange);
     _isFocused = _node.hasFocus;
+    if (_isFocused || widget.autoFocus) {
+      _ensureVisible();
+    }
   }
 
   @override
@@ -57,16 +61,80 @@ class _TVFocusCardState extends State<TVFocusCard> {
       _node = widget.focusNode ?? FocusNode();
       _node.addListener(_handleFocusChange);
       _isFocused = _node.hasFocus;
+      if (_isFocused) {
+        _ensureVisible();
+      }
     }
   }
 
   void _handleFocusChange() {
-    if (mounted) {
-      setState(() {
-        _isFocused = _node.hasFocus;
+    if (!mounted) return;
+    final hasFocus = _node.hasFocus;
+    if (_isFocused != hasFocus) {
+      _safeSetState(() {
+        _isFocused = hasFocus;
       });
-      widget.onFocusChange?.call(_isFocused);
+      if (hasFocus) {
+        _ensureVisible();
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onFocusChange?.call(hasFocus);
+        }
+      });
     }
+  }
+
+  void _safeSetState(VoidCallback fn) {
+    if (!mounted) return;
+    final phase = WidgetsBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(fn);
+      });
+    } else {
+      setState(fn);
+    }
+  }
+
+  void _ensureVisible() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final ro = context.findRenderObject();
+      if (ro == null) return;
+
+      BuildContext? ctx = context;
+      bool handledHorizontal = false;
+      bool handledVertical = false;
+
+      while (ctx != null && (!handledHorizontal || !handledVertical)) {
+        final scrollable = Scrollable.maybeOf(ctx);
+        if (scrollable == null) break;
+
+        if (scrollable.position.axis == Axis.horizontal && !handledHorizontal) {
+          scrollable.position.ensureVisible(
+            ro,
+            alignment: 0.1,
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+            alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+          );
+          handledHorizontal = true;
+        } else if (scrollable.position.axis == Axis.vertical && !handledVertical) {
+          scrollable.position.ensureVisible(
+            ro,
+            alignment: 0.5,
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+          );
+          handledVertical = true;
+        }
+
+        ctx = scrollable.context;
+      }
+    });
   }
 
   @override

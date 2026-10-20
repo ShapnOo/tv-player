@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:video_player/video_player.dart';
 
@@ -73,6 +74,19 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
     }
   }
 
+  void _safeSetState(VoidCallback fn) {
+    if (!mounted) return;
+    final phase = WidgetsBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(fn);
+      });
+    } else {
+      setState(fn);
+    }
+  }
+
   Future<void> _initBannerVideo(EpisodeItem ep) async {
     try {
       final url = ep.isDolbyVision
@@ -95,7 +109,7 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
       }
 
       if (mounted) {
-        setState(() {
+        _safeSetState(() {
           _bannerController = controller;
           _isBannerInitialized = true;
         });
@@ -105,7 +119,7 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
     } catch (e) {
       debugPrint('[SeriesBanner] Video preview notice (poster fallback): $e');
       if (mounted) {
-        setState(() {
+        _safeSetState(() {
           _isBannerInitialized = false;
         });
       }
@@ -151,7 +165,7 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
     // Resume billboard loop upon return
     if (mounted && _isBannerInitialized && _bannerController != null) {
       _bannerController!.play();
-      setState(() {});
+      _safeSetState(() {});
     }
   }
 
@@ -297,8 +311,8 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
 
               // 2. Main Content
               SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(48, 16, 48, 40),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -580,7 +594,7 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
                               height: 150,
                               onFocusChange: (hasF) {
                                 if (hasF) {
-                                  setState(() {
+                                  _safeSetState(() {
                                     _focusedEpisode = ep;
                                   });
                                 }
@@ -760,6 +774,9 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
                           },
                         ),
                       ),
+
+                      // Generous TV Overscan Buffer for episode cards
+                      const SizedBox(height: 140),
                     ],
                   ),
                 ),

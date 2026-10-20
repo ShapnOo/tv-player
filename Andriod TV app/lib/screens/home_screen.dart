@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:video_player/video_player.dart';
 
@@ -50,10 +51,23 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
     super.dispose();
   }
 
+  void _safeSetState(VoidCallback fn) {
+    if (!mounted) return;
+    final phase = WidgetsBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(fn);
+      });
+    } else {
+      setState(fn);
+    }
+  }
+
   void _onServiceUpdate() {
     if (mounted) {
       _checkAndStartBanner();
-      setState(() {});
+      _safeSetState(() {});
     }
   }
 
@@ -71,7 +85,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
     try {
       final oldController = _bannerController;
       _bannerController = null;
-      if (mounted) setState(() => _isBannerInitialized = false);
+      if (mounted) _safeSetState(() => _isBannerInitialized = false);
       if (oldController != null) {
         await oldController.dispose();
       }
@@ -96,7 +110,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
       }
 
       if (mounted) {
-        setState(() {
+        _safeSetState(() {
           _bannerController = controller;
           _isBannerInitialized = true;
         });
@@ -106,7 +120,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
     } catch (e) {
       debugPrint('[HomeBanner] Video preview notice (poster fallback): $e');
       if (mounted) {
-        setState(() => _isBannerInitialized = false);
+        _safeSetState(() => _isBannerInitialized = false);
       }
     }
   }
@@ -393,7 +407,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
             // 2. Main Page Content (Header + Hero Billboard Info + Carousels)
             SafeArea(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                padding: const EdgeInsets.fromLTRB(48, 16, 48, 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -450,7 +464,8 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
                       const SizedBox(height: 26),
                     ],
 
-                    const SizedBox(height: 48),
+                    // Generous TV Overscan Buffer so the bottom row can easily center and never clip
+                    const SizedBox(height: 180),
                   ],
                 ),
               ),
@@ -898,7 +913,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
             height: 145,
             onFocusChange: (hasF) {
               if (hasF && isMovieItem) {
-                setState(() {
+                _safeSetState(() {
                   _focusedMovie = movie;
                   _focusedSeries = null;
                 });
@@ -1037,7 +1052,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
             height: 145,
             onFocusChange: (hasF) {
               if (hasF) {
-                setState(() {
+                _safeSetState(() {
                   _focusedMovie = movie;
                   _focusedSeries = null;
                 });
@@ -1278,7 +1293,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
             height: 145,
             onFocusChange: (hasF) {
               if (hasF) {
-                setState(() {
+                _safeSetState(() {
                   _focusedSeries = series;
                   _focusedMovie = null;
                 });

@@ -863,7 +863,7 @@ class _TVPlayerScreenState extends State<TVPlayerScreen> {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 20),
+          padding: const EdgeInsets.fromLTRB(48, 16, 48, 32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
