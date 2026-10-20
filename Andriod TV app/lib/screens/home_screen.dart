@@ -917,69 +917,45 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
                   fontSize: 13,
                 ),
               ),
-              const SizedBox(height: 18),
-              const Text(
-                'Quick Switch Environment:',
-                style: TextStyle(
-                  color: TVTheme.textMuted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              if (widget.apiService.errorMessage.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: TVTheme.crimson.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: TVTheme.crimson.withValues(alpha: 0.4)),
+                  ),
+                  child: Text(
+                    widget.apiService.errorMessage,
+                    style: const TextStyle(
+                      color: Color(0xFFFCA5A5),
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
+              ],
+              const SizedBox(height: 22),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 12,
+                runSpacing: 12,
                 alignment: WrapAlignment.center,
                 children: [
-                  ActionChip(
-                    backgroundColor: TVTheme.surfaceElevated,
-                    side: const BorderSide(color: TVTheme.border),
-                    label: const Text(
-                      '📺 TV (10.81.100.62)',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                    onPressed: () => widget.apiService.setBaseUrl(
-                      'http://10.81.100.62:5050',
-                    ),
-                  ),
-                  ActionChip(
-                    backgroundColor: TVTheme.surfaceElevated,
-                    side: const BorderSide(color: TVTheme.border),
-                    label: const Text(
-                      '📱 Emulator (10.0.2.2)',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                    onPressed: () =>
-                        widget.apiService.setBaseUrl('http://10.0.2.2:5050'),
-                  ),
-                  ActionChip(
-                    backgroundColor: TVTheme.surfaceElevated,
-                    side: const BorderSide(color: TVTheme.border),
-                    label: const Text(
-                      '💻 Laptop (localhost)',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                    onPressed: () =>
-                        widget.apiService.setBaseUrl('http://localhost:5050'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
                   TVFocusButton(
-                    label: 'Configure IP',
-                    isPrimary: false,
-                    onTap: _openSettings,
-                  ),
-                  const SizedBox(width: 14),
-                  TVFocusButton(
-                    label: 'Auto-Detect & Connect',
+                    label: 'Retry Connection (10.81.100.62)',
+                    icon: const Icon(Icons.refresh_rounded, size: 20),
                     isPrimary: true,
                     autoFocus: true,
-                    onTap: () => widget.apiService.checkAndLoad(),
+                    onTap: () async {
+                      await widget.apiService.setBaseUrl('http://10.81.100.62:5050');
+                    },
+                  ),
+                  TVFocusButton(
+                    label: 'Configure IP',
+                    icon: const Icon(Icons.edit_note_rounded, size: 20),
+                    isPrimary: false,
+                    onTap: _openSettings,
                   ),
                 ],
               ),
