@@ -1,0 +1,73 @@
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Node Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Thumbnails & Subtitle Cache (keep folder structure via .gitkeep)
+.thumbnails/*
+!.thumbnails/.gitkeep
+
+# Media Directories (Keep folder structure via .gitkeep, ignore all videos & media)
+Media/**/*
+!Media/**/
+!Media/**/.gitkeep
+
+# Ignore all video and subtitle files everywhere
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.m4v
+*.mpg
+*.mpeg
+*.m2v
+*.ts
+*.iso
+*.vob
+
+# Binary APKs (heavy files)
+*.apk
+*.aab
+*.ipa
+
+# Flutter & Dart Build Output (Android TV app)
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub-cache/
+**/.pub/
+
+# Android Build & Gradle Files
+**/.gradle/
+**/local.properties
+**/GeneratedPluginRegistrant.java
+**/app/build/
+
+# IDE & Editor Configs
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Logs & Temporary files
+*.log
+.tempmediaStorage/
+scratch/
