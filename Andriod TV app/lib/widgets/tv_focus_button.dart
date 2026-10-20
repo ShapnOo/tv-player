@@ -16,11 +16,14 @@ class TVFocusButton extends StatefulWidget {
   final double? iconSize;
   final double borderRadius;
 
+  final ValueChanged<bool>? onFocusChange;
+
   const TVFocusButton({
     super.key,
     this.icon,
     required this.label,
     required this.onTap,
+    this.onFocusChange,
     this.isPrimary = true,
     this.focusNode,
     this.autoFocus = false,
@@ -44,9 +47,6 @@ class _TVFocusButtonState extends State<TVFocusButton> {
     _node = widget.focusNode ?? FocusNode();
     _node.addListener(_handleFocusChange);
     _isFocused = _node.hasFocus;
-    if (_isFocused || widget.autoFocus) {
-      _ensureVisible();
-    }
   }
 
   @override
@@ -61,9 +61,6 @@ class _TVFocusButtonState extends State<TVFocusButton> {
       _node = widget.focusNode ?? FocusNode();
       _node.addListener(_handleFocusChange);
       _isFocused = _node.hasFocus;
-      if (_isFocused) {
-        _ensureVisible();
-      }
     }
   }
 
@@ -74,9 +71,11 @@ class _TVFocusButtonState extends State<TVFocusButton> {
       _safeSetState(() {
         _isFocused = hasFocus;
       });
-      if (hasFocus) {
-        _ensureVisible();
-      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onFocusChange?.call(hasFocus);
+        }
+      });
     }
   }
 
@@ -91,45 +90,6 @@ class _TVFocusButtonState extends State<TVFocusButton> {
     } else {
       setState(fn);
     }
-  }
-
-  void _ensureVisible() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final ro = context.findRenderObject();
-      if (ro == null) return;
-
-      BuildContext? ctx = context;
-      bool handledHorizontal = false;
-      bool handledVertical = false;
-
-      while (ctx != null && (!handledHorizontal || !handledVertical)) {
-        final scrollable = Scrollable.maybeOf(ctx);
-        if (scrollable == null) break;
-
-        if (scrollable.position.axis == Axis.horizontal && !handledHorizontal) {
-          scrollable.position.ensureVisible(
-            ro,
-            alignment: 0.1,
-            duration: const Duration(milliseconds: 240),
-            curve: Curves.easeOutCubic,
-            alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
-          );
-          handledHorizontal = true;
-        } else if (scrollable.position.axis == Axis.vertical && !handledVertical) {
-          scrollable.position.ensureVisible(
-            ro,
-            alignment: 0.15,
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeOutCubic,
-            alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
-          );
-          handledVertical = true;
-        }
-
-        ctx = scrollable.context;
-      }
-    });
   }
 
   @override

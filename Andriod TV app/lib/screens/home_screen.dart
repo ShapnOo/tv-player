@@ -35,6 +35,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
   VideoPlayerController? _bannerController;
   bool _isBannerInitialized = false;
 
+  final ScrollController _mainScrollController = ScrollController();
   DateTime? _lastBackPressTime;
 
   @override
@@ -48,6 +49,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
   void dispose() {
     widget.apiService.removeListener(_onServiceUpdate);
     _bannerController?.dispose();
+    _mainScrollController.dispose();
     super.dispose();
   }
 
@@ -61,6 +63,54 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
       });
     } else {
       setState(fn);
+    }
+  }
+
+  void _ensureVisibleInMainScroll(BuildContext cardContext) {
+    if (!mounted || !_mainScrollController.hasClients) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_mainScrollController.hasClients) return;
+      final renderBox = cardContext.findRenderObject() as RenderBox?;
+      if (renderBox == null || !renderBox.hasSize) return;
+
+      final cardOrigin = renderBox.localToGlobal(Offset.zero);
+      final cardTop = cardOrigin.dy;
+      final cardBottom = cardTop + renderBox.size.height * 1.05;
+      final screenHeight = MediaQuery.of(cardContext).size.height;
+
+      const double safeBottomMargin = 95.0;
+      const double safeTopMargin = 70.0;
+
+      double delta = 0.0;
+      if (cardBottom > screenHeight - safeBottomMargin) {
+        delta = cardBottom - (screenHeight - safeBottomMargin) + 25.0;
+      } else if (cardTop < safeTopMargin) {
+        delta = -(safeTopMargin - cardTop + 25.0);
+      }
+
+      if (delta != 0.0) {
+        final current = _mainScrollController.offset;
+        final maxScroll = _mainScrollController.position.maxScrollExtent;
+        final target = (current + delta).clamp(0.0, maxScroll);
+        if ((target - current).abs() > 4.0) {
+          _mainScrollController.animateTo(
+            target,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      }
+    });
+  }
+
+  void _scrollToTopIfNeeded() {
+    if (_mainScrollController.hasClients && _mainScrollController.offset > 0) {
+      _mainScrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+      );
     }
   }
 
@@ -104,10 +154,32 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
       await controller.setLooping(true);
       await controller.play();
 
-      // Soft seek past studio logo asynchronously if duration permits
-      if (controller.value.duration.inSeconds > 50) {
-        controller.seekTo(const Duration(seconds: 20)).catchError((_) {});
+      // Seek to a random time between 15% and 75% so it plays an exciting scene, not from the start
+      final totalSec = controller.value.duration.inSeconds;
+      if (totalSec > 60) {
+        final minSec = (totalSec * 0.15).toInt();
+        final maxSec = (totalSec * 0.75).toInt();
+        final span = max(1, maxSec - minSec);
+        final randomSec = minSec + Random().nextInt(span);
+        controller.seekTo(Duration(seconds: randomSec)).catchError((_) {});
+      } else if (totalSec > 20) {
+        final randomSec = Random().nextInt(totalSec - 10) + 5;
+        controller.seekTo(Duration(seconds: randomSec)).catchError((_) {});
       }
+
+      // When the clip reaches its end, seek to another random time rather than looping to 00:00
+      controller.addListener(() {
+        if (controller.value.isInitialized &&
+            controller.value.duration.inSeconds > 60 &&
+            controller.value.position >= controller.value.duration - const Duration(seconds: 3)) {
+          final tSec = controller.value.duration.inSeconds;
+          final minS = (tSec * 0.15).toInt();
+          final maxS = (tSec * 0.75).toInt();
+          final span = max(1, maxS - minS);
+          final rndSec = minS + Random().nextInt(span);
+          controller.seekTo(Duration(seconds: rndSec)).catchError((_) {});
+        }
+      });
 
       if (mounted) {
         _safeSetState(() {
@@ -407,6 +479,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
             // 2. Main Page Content (Header + Hero Billboard Info + Carousels)
             SafeArea(
               child: SingleChildScrollView(
+                controller: _mainScrollController,
                 padding: const EdgeInsets.fromLTRB(48, 16, 48, 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,6 +610,9 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5.5),
           fontSize: 12,
           borderRadius: 16,
+          onFocusChange: (hasF) {
+            if (hasF) _scrollToTopIfNeeded();
+          },
           onTap: () => setState(() => _selectedFilter = 'all'),
         ),
         const SizedBox(width: 8),
@@ -546,6 +622,9 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5.5),
           fontSize: 12,
           borderRadius: 16,
+          onFocusChange: (hasF) {
+            if (hasF) _scrollToTopIfNeeded();
+          },
           onTap: () => setState(() => _selectedFilter = 'movies'),
         ),
         const SizedBox(width: 8),
@@ -555,6 +634,9 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5.5),
           fontSize: 12,
           borderRadius: 16,
+          onFocusChange: (hasF) {
+            if (hasF) _scrollToTopIfNeeded();
+          },
           onTap: () => setState(() => _selectedFilter = 'series'),
         ),
 
@@ -570,6 +652,9 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           fontSize: 11.5,
           borderRadius: 16,
+          onFocusChange: (hasF) {
+            if (hasF) _scrollToTopIfNeeded();
+          },
           onTap: _openSettings,
         ),
         const SizedBox(width: 8),
@@ -582,6 +667,9 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           fontSize: 11.5,
           borderRadius: 16,
+          onFocusChange: (hasF) {
+            if (hasF) _scrollToTopIfNeeded();
+          },
           onTap: () => widget.apiService.checkAndLoad(),
         ),
       ],

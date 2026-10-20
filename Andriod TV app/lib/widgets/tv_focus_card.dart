@@ -104,35 +104,14 @@ class _TVFocusCardState extends State<TVFocusCard> {
       final ro = context.findRenderObject();
       if (ro == null) return;
 
-      BuildContext? ctx = context;
-      bool handledHorizontal = false;
-      bool handledVertical = false;
-
-      while (ctx != null && (!handledHorizontal || !handledVertical)) {
-        final scrollable = Scrollable.maybeOf(ctx);
-        if (scrollable == null) break;
-
-        if (scrollable.position.axis == Axis.horizontal && !handledHorizontal) {
-          scrollable.position.ensureVisible(
-            ro,
-            alignment: 0.1,
-            duration: const Duration(milliseconds: 240),
-            curve: Curves.easeOutCubic,
-            alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
-          );
-          handledHorizontal = true;
-        } else if (scrollable.position.axis == Axis.vertical && !handledVertical) {
-          scrollable.position.ensureVisible(
-            ro,
-            alignment: 0.5,
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeOutCubic,
-            alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
-          );
-          handledVertical = true;
-        }
-
-        ctx = scrollable.context;
+      final scrollable = Scrollable.maybeOf(context);
+      if (scrollable != null && scrollable.position.axis == Axis.horizontal) {
+        scrollable.position.ensureVisible(
+          ro,
+          alignment: 0.08,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+        );
       }
     });
   }
