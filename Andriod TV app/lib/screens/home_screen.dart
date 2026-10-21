@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -170,7 +171,8 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
 
       if (currentSession != _bannerSessionId || !mounted) return;
 
-      final url = movie.isDolbyVision
+      final isApple = Platform.isMacOS || Platform.isIOS;
+      final url = (movie.isDolbyVision || (isApple && movie.format.toUpperCase() == 'MKV'))
           ? movie.compatUrl(widget.apiService.baseUrl)
           : movie.streamUrl(widget.apiService.baseUrl);
 

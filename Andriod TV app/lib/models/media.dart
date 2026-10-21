@@ -80,8 +80,8 @@ class MovieItem {
   }
 
   String streamUrl(String baseUrl) => '$baseUrl/api/stream/$id';
-  String compatUrl(String baseUrl) => '$baseUrl/api/stream/$id?compat=1';
-  String transcodeUrl(String baseUrl) => '$baseUrl/api/transcode/$id';
+  String compatUrl(String baseUrl) => '$baseUrl/api/stream/$id.mp4?compat=1';
+  String transcodeUrl(String baseUrl) => '$baseUrl/api/transcode/$id.mp4';
   String thumbnailUrl(String baseUrl) => '$baseUrl/api/thumbnail/$id';
 }
 
@@ -132,8 +132,8 @@ class EpisodeItem {
   }
 
   String streamUrl(String baseUrl) => '$baseUrl/api/stream/$id';
-  String compatUrl(String baseUrl) => '$baseUrl/api/stream/$id?compat=1';
-  String transcodeUrl(String baseUrl) => '$baseUrl/api/transcode/$id';
+  String compatUrl(String baseUrl) => '$baseUrl/api/stream/$id.mp4?compat=1';
+  String transcodeUrl(String baseUrl) => '$baseUrl/api/transcode/$id.mp4';
   String thumbnailUrl(String baseUrl) => '$baseUrl/api/thumbnail/$id';
 }
 

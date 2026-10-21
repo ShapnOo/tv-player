@@ -450,8 +450,9 @@ app.get('/api/media/:id', (req, res) => {
   res.json(item);
 });
 
-app.get('/api/stream/:id', (req, res) => {
-  const item = mediaMap.get(req.params.id);
+app.get(['/api/stream/:id', '/api/stream/:id.mp4', '/api/stream/:id.mkv'], (req, res) => {
+  const cleanId = req.params.id.replace(/\.[a-zA-Z0-9]+$/, '');
+  const item = mediaMap.get(cleanId);
   if (!item) {
     return res.status(404).send('Media item not found');
   }
@@ -469,8 +470,9 @@ app.get('/api/stream/:id', (req, res) => {
 });
 
 // Real-time lossless MP4 transmuxer for Smart TVs and Apple devices
-app.get('/api/transmux/:id', (req, res) => {
-  const item = mediaMap.get(req.params.id);
+app.get(['/api/transmux/:id', '/api/transmux/:id.mp4'], (req, res) => {
+  const cleanId = req.params.id.replace(/\.[a-zA-Z0-9]+$/, '');
+  const item = mediaMap.get(cleanId);
   if (!item) {
     return res.status(404).send('Media item not found');
   }
@@ -478,8 +480,9 @@ app.get('/api/transmux/:id', (req, res) => {
 });
 
 // Universal hardware transcode (1080p H.264) for devices without 4K/HEVC decoders
-app.get('/api/transcode/:id', (req, res) => {
-  const item = mediaMap.get(req.params.id);
+app.get(['/api/transcode/:id', '/api/transcode/:id.mp4'], (req, res) => {
+  const cleanId = req.params.id.replace(/\.[a-zA-Z0-9]+$/, '');
+  const item = mediaMap.get(cleanId);
   if (!item) {
     return res.status(404).send('Media item not found');
   }

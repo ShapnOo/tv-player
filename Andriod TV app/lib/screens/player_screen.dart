@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -114,11 +115,14 @@ class _TVPlayerScreenState extends State<TVPlayerScreen> {
   String _getUrlForMode(StreamMode mode) {
     switch (mode) {
       case StreamMode.direct:
+        if ((Platform.isMacOS || Platform.isIOS) && widget.isDolbyVision) {
+          return widget.compatUrl ?? '${widget.videoUrl}.mp4?compat=1';
+        }
         return widget.videoUrl;
       case StreamMode.compat:
-        return widget.compatUrl ?? '${widget.videoUrl}?compat=1';
+        return widget.compatUrl ?? '${widget.videoUrl}.mp4?compat=1';
       case StreamMode.transcode:
-        return widget.transcodeUrl ?? '${widget.videoUrl}?mode=transcode';
+        return widget.transcodeUrl ?? '${widget.videoUrl}.mp4?mode=transcode';
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -166,7 +167,8 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
 
       if (currentSession != _bannerSessionId || !mounted) return;
 
-      final url = ep.isDolbyVision
+      final isApple = Platform.isMacOS || Platform.isIOS;
+      final url = (ep.isDolbyVision || (isApple && ep.format.toUpperCase() == 'MKV'))
           ? ep.compatUrl(widget.baseUrl)
           : ep.streamUrl(widget.baseUrl);
 
