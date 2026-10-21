@@ -96,8 +96,8 @@ body {
   align-items: center;
   padding: 0 3.25rem;
   background: rgba(9, 10, 14, 0.88);
-  backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
+  backdrop-filter: blur(28px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
@@ -112,6 +112,7 @@ body {
   align-items: center;
   gap: 0.55rem;
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
   transition: transform var(--transition-fast);
 }
@@ -131,6 +132,7 @@ body {
 .brand-name .highlight {
   background: var(--accent-gradient);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -443,6 +445,7 @@ body {
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   transition: all var(--transition-fast);
 }
@@ -546,6 +549,7 @@ body {
   justify-content: center;
   opacity: 0;
   transition: opacity var(--transition-fast);
+  -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
 }
 
@@ -595,6 +599,7 @@ body {
   border-radius: var(--radius-sm);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 
@@ -709,8 +714,8 @@ body {
 
 .series-modal::backdrop {
   background: rgba(0, 0, 0, 0.88);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
 }
 
 .series-modal-box {
@@ -921,8 +926,8 @@ body {
 
 .modal-dialog::backdrop {
   background: rgba(0, 0, 0, 0.88);
-  backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 
 .modal-box {
@@ -1159,6 +1164,7 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   transition: all var(--transition-fast);
 }
@@ -1238,6 +1244,7 @@ body {
   align-items: center;
   justify-content: center;
   color: var(--accent-gold-light);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
@@ -1650,8 +1657,8 @@ html {
   align-items: center;
   gap: 0.65rem;
   background: rgba(14, 17, 24, 0.7);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.16);
   color: #f8fafc;
   text-decoration: none;
@@ -1714,8 +1721,8 @@ html {
   align-items: center;
   gap: 0.65rem;
   background: rgba(14, 17, 24, 0.7);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #f1f5f9;
   font-size: 0.875rem;
@@ -1876,14 +1883,21 @@ html {
   gap: 0.65rem;
   flex-wrap: nowrap;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  -ms-overflow-style: none; /* IE 10+ and legacy Edge */
   margin-top: 1rem;
   padding: 0.2rem 0.2rem 0.4rem 0;
 }
 
+/* Chrome < 121, Safari < 18.2, iOS Safari, Samsung Internet */
 .billboard-actions::-webkit-scrollbar {
   display: none;
+}
+
+/* Modern standard: Firefox 64+, Chrome 121+, Safari 18.2+ */
+@supports (scrollbar-width: none) {
+  .billboard-actions {
+    scrollbar-width: none;
+  }
 }
 
 .billboard-btn {
@@ -1936,8 +1950,8 @@ html {
   background: rgba(245, 158, 11, 0.16);
   color: #ffffff;
   border: 1px solid rgba(245, 158, 11, 0.4);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
@@ -1955,8 +1969,8 @@ html {
 /* 3. Frosted Dark Glass Buttons (Audio, Shuffle) */
 .billboard-btn.btn-billboard-glass {
   background: rgba(17, 20, 28, 0.65);
-  backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   color: #e2e8f0;
   border: 1px solid rgba(255, 255, 255, 0.11);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -2174,4 +2188,55 @@ html {
     gap: 1.25rem;
   }
 }
+
+/* Helper component classes for clean HTML without inline styles */
+.tab-apps-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-badge-new {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  font-weight: 700;
+}
+
+.header-apps-btn {
+  text-decoration: none;
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.header-apps-btn svg {
+  color: #10b981;
+}
+
+.step-item-apk {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.step-num-gold {
+  background: #10b981;
+  color: #000;
+}
+
+.apk-download-link {
+  color: #10b981;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
 

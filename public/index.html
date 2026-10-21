@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shapno • Mac Local Media Server</title>
   <meta name="description" content="Stream movies and TV series over your local Wi-Fi from your Mac to any TV, mobile phone, or computer.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -23,13 +23,13 @@
         <span class="live-indicator-dot" title="Server Live on Mac"></span>
       </div>
 
-      <nav class="category-tabs" id="categoryTabs" role="tablist">
-        <button class="tab-btn active" data-type="all" id="tabAll">All Media</button>
-        <button class="tab-btn" data-type="movie" id="tabMovies">Movies</button>
-        <button class="tab-btn" data-type="series" id="tabSeries">TV Series</button>
-        <a href="/apps" class="tab-btn" id="tabApps" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+      <nav class="category-tabs" id="categoryTabs" aria-label="Media categories">
+        <button type="button" class="tab-btn active" data-type="all" id="tabAll">All Media</button>
+        <button type="button" class="tab-btn" data-type="movie" id="tabMovies">Movies</button>
+        <button type="button" class="tab-btn" data-type="series" id="tabSeries">TV Series</button>
+        <a href="/apps" class="tab-btn tab-apps-link" id="tabApps">
           <span>APKs</span>
-          <span style="font-size: 10px; padding: 1px 6px; border-radius: 4px; background: rgba(16,185,129,0.2); color: #10b981; font-weight: 700;">NEW</span>
+          <span class="tab-badge-new">NEW</span>
         </a>
       </nav>
     </div>
@@ -44,15 +44,15 @@
         <kbd class="search-kbd">/</kbd>
       </div>
 
-      <button class="header-action-btn" id="btnRescan" title="Rescan Media Folder" aria-label="Rescan Media Folder">
+      <button type="button" class="header-action-btn" id="btnRescan" title="Rescan Media Folder" aria-label="Rescan Media Folder">
         <svg class="rescan-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
         </svg>
         <span>Rescan</span>
       </button>
 
-      <a href="/apps" class="header-action-btn" id="btnHeaderApps" title="Download Android TV & Mobile APKs" style="text-decoration: none; color: #10b981; border-color: rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.08);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color: #10b981;">
+      <a href="/apps" class="header-action-btn header-apps-btn" id="btnHeaderApps" title="Download Android TV &amp; Mobile APKs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="7 10 12 15 17 10"></polyline>
           <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -60,7 +60,7 @@
         <span>Download APK</span>
       </a>
 
-      <button class="header-action-btn btn-connect-action" id="btnConnect" aria-label="Connect Devices">
+      <button type="button" class="header-action-btn btn-connect-action" id="btnConnect" aria-label="Connect Devices">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
           <polyline points="17 2 12 7 7 2"></polyline>
@@ -73,7 +73,7 @@
   <!-- Main Content -->
   <main class="main-container">
     <!-- Featured Hero Banner -->
-    <section class="hero-spotlight" id="heroSpotlight" style="display: none;">
+    <section class="hero-spotlight is-hidden" id="heroSpotlight">
       <div class="hero-backdrop" id="heroBackdrop"></div>
       <div class="hero-overlay"></div>
       <div class="hero-content">
@@ -85,13 +85,13 @@
         <h1 class="hero-title" id="heroTitle">Cyberpunk 2077 Demo</h1>
         <p class="hero-meta" id="heroMeta">2024 • Subtitles Ready • Direct Mac Stream</p>
         <div class="hero-actions">
-          <button class="btn-play-hero" id="heroPlayBtn">
+          <button type="button" class="btn-play-hero" id="heroPlayBtn">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
             <span>Play Now</span>
           </button>
-          <button class="btn-secondary" id="heroResumeBtn" style="display: none;">
+          <button type="button" class="btn-secondary is-hidden" id="heroResumeBtn">
             <span>Resume from <span id="heroResumeTime">00:00</span></span>
           </button>
         </div>
@@ -101,7 +101,7 @@
     <!-- Media Library Sections (Movies & TV Series) -->
     <section class="media-section">
       <!-- Empty State -->
-      <div class="empty-state" id="emptyState" style="display: none;">
+      <div class="empty-state is-hidden" id="emptyState">
         <div class="empty-icon">📂</div>
         <h3>No Media Files Found Yet</h3>
         <p>Drop your movies or TV series into the <strong>Media</strong> folder on your Mac.</p>
@@ -115,7 +115,7 @@
             <p>Organize in <code>Media/Series/Show Name/Season 1/S01E01.mp4</code></p>
           </div>
         </div>
-        <button class="btn-primary" id="btnEmptyRescan">Scan Folder Again</button>
+        <button type="button" class="btn-primary" id="btnEmptyRescan">Scan Folder Again</button>
       </div>
 
       <!-- Movies Section -->
@@ -147,7 +147,7 @@
   </main>
 
 
-  <!-- Connect Devices Modal (QR Code & IP Address) -->
+  <!-- Connect Devices Modal (QR Code &amp; IP Address) -->
   <dialog class="modal-dialog" id="connectModal">
     <div class="modal-box">
       <div class="modal-header">
@@ -158,30 +158,30 @@
             <p>Ensure your device is connected to the same Wi-Fi network.</p>
           </div>
         </div>
-        <button class="close-modal-btn" id="closeConnectModal" aria-label="Close dialog">&times;</button>
+        <button type="button" class="close-modal-btn" id="closeConnectModal" aria-label="Close dialog">&times;</button>
       </div>
 
       <div class="modal-body">
         <!-- Mobile QR Code Option -->
         <div class="connect-option-card">
           <div class="qr-preview-wrap">
-            <img id="modalQrImage" alt="Scan QR Code to open on mobile" class="qr-image" src="" />
+            <img id="modalQrImage" alt="Scan QR Code to open on mobile" class="qr-image" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E">
             <span class="qr-tip">📱 Point your phone camera here to open</span>
           </div>
 
           <div class="device-instructions">
             <h4>Direct Streaming URL:</h4>
             <div class="url-copy-box">
-              <input type="text" id="serverUrlInput" readonly value="http://10.81.100.62:5050">
-              <button class="btn-copy" id="btnCopyUrl" title="Copy to clipboard">
+              <input type="text" id="serverUrlInput" readonly value="http://10.81.100.62:5050" aria-label="Direct Streaming URL">
+              <button type="button" class="btn-copy" id="btnCopyUrl" title="Copy to clipboard">
                 <span id="copyText">Copy</span>
               </button>
             </div>
 
             <div class="instructions-steps">
-              <div class="step-item" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 10px 12px;">
-                <span class="step-num" style="background: #10b981; color: #000;">★</span>
-                <div><strong>Hisense & Android TV App:</strong> <a href="/Shapno-AndroidTV.apk" download style="color: #10b981; font-weight: 700; text-decoration: underline;">Download Shapno-AndroidTV.apk (51MB)</a> — Optimized for your Hisense 50A6F3 4K TV!</div>
+              <div class="step-item step-item-apk">
+                <span class="step-num step-num-gold">★</span>
+                <div><strong>Hisense &amp; Android TV App:</strong> <a href="/Shapno-AndroidTV.apk" download class="apk-download-link">Download Shapno-AndroidTV.apk (51MB)</a> — Optimized for your Hisense 50A6F3 4K TV!</div>
               </div>
               <div class="step-item">
                 <span class="step-num">1</span>
@@ -203,20 +203,20 @@
   </dialog>
 
   <!-- Video Theater Player Overlay -->
-  <div class="player-overlay" id="playerOverlay" style="display: none;">
+  <div class="player-overlay is-hidden" id="playerOverlay">
     <div class="player-header">
       <div class="player-title-info">
         <h3 id="playerTitle">Cyberpunk 2077 Demo</h3>
         <span class="player-subtitle" id="playerSubtitle">Direct Local Stream</span>
       </div>
       <div class="player-top-actions">
-        <button class="player-icon-btn" id="btnPip" title="Picture-in-Picture">
+        <button type="button" class="player-icon-btn" id="btnPip" title="Picture-in-Picture">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
             <rect x="11" y="9" width="8" height="6" rx="1"></rect>
           </svg>
         </button>
-        <button class="player-icon-btn close-player" id="btnClosePlayer" title="Close Player (Esc)">
+        <button type="button" class="player-icon-btn close-player" id="btnClosePlayer" title="Close Player (Esc)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -227,7 +227,7 @@
 
     <!-- Video Viewport -->
     <div class="video-container" id="videoContainer">
-      <video id="mainVideo" playsinline preload="metadata">
+      <video id="mainVideo" preload="metadata">
         <!-- Track added dynamically for subtitles -->
       </video>
 
@@ -252,24 +252,24 @@
 
         <div class="controls-bottom-bar">
           <div class="controls-left">
-            <button class="control-btn" id="btnPlayPause" title="Play/Pause (Space)">
+            <button type="button" class="control-btn" id="btnPlayPause" title="Play/Pause (Space)">
               <svg id="ctrlPlayIcon" viewBox="0 0 24 24" fill="currentColor">
                 <polygon points="5 3 19 12 5 21 5 3"></polygon>
               </svg>
-              <svg id="ctrlPauseIcon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+              <svg id="ctrlPauseIcon" class="is-hidden" viewBox="0 0 24 24" fill="currentColor">
                 <rect x="6" y="4" width="4" height="16"></rect>
                 <rect x="14" y="4" width="4" height="16"></rect>
               </svg>
             </button>
 
-            <button class="control-btn" id="btnRewind" title="Rewind 10s (Left Arrow)">
+            <button type="button" class="control-btn" id="btnRewind" title="Rewind 10s (Left Arrow)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/>
               </svg>
               <span class="btn-micro-badge">10s</span>
             </button>
 
-            <button class="control-btn" id="btnForward" title="Forward 10s (Right Arrow)">
+            <button type="button" class="control-btn" id="btnForward" title="Forward 10s (Right Arrow)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M13 17l5-5-5-5M6 17l5-5-5-5"/>
               </svg>
@@ -278,18 +278,18 @@
 
             <!-- Volume Control -->
             <div class="volume-group">
-              <button class="control-btn" id="btnMute" title="Mute (M)">
+              <button type="button" class="control-btn" id="btnMute" title="Mute (M)">
                 <svg id="ctrlVolumeHigh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                   <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                 </svg>
-                <svg id="ctrlVolumeMuted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                <svg id="ctrlVolumeMuted" class="is-hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                   <line x1="23" y1="9" x2="17" y2="15"></line>
                   <line x1="17" y1="9" x2="23" y2="15"></line>
                 </svg>
               </button>
-              <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.05" value="1">
+              <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.05" value="1" aria-label="Volume Slider">
             </div>
 
             <!-- Time Display -->
@@ -302,7 +302,7 @@
 
           <div class="controls-right">
             <!-- Next Episode (if series) -->
-            <button class="control-btn next-ep-btn" id="btnNextEpisode" style="display: none;" title="Next Episode">
+            <button type="button" class="control-btn next-ep-btn is-hidden" id="btnNextEpisode" title="Next Episode">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <polygon points="5 4 15 12 5 20 5 4"></polygon>
                 <rect x="17" y="4" width="2" height="16"></rect>
@@ -311,7 +311,7 @@
             </button>
 
             <!-- Subtitle Button -->
-            <button class="control-btn" id="btnSubtitles" title="Subtitles">
+            <button type="button" class="control-btn" id="btnSubtitles" title="Subtitles">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
                 <line x1="6" y1="15" x2="10" y2="15"></line>
@@ -323,7 +323,7 @@
 
             <!-- Playback Speed Picker -->
             <div class="speed-selector">
-              <button class="control-btn speed-btn" id="btnSpeed">1.0x</button>
+              <button type="button" class="control-btn speed-btn" id="btnSpeed">1.0x</button>
               <div class="speed-menu" id="speedMenu">
                 <div class="speed-item" data-speed="0.75">0.75x</div>
                 <div class="speed-item active" data-speed="1.0">1.0x Normal</div>
@@ -334,11 +334,11 @@
             </div>
 
             <!-- Fullscreen -->
-            <button class="control-btn" id="btnFullscreen" title="Fullscreen (F)">
+            <button type="button" class="control-btn" id="btnFullscreen" title="Fullscreen (F)">
               <svg id="fsEnterIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
               </svg>
-              <svg id="fsExitIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+              <svg id="fsExitIcon" class="is-hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
               </svg>
             </button>

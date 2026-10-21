@@ -12,6 +12,11 @@
   // DOM Elements - Billboard
   const billboardPoster = document.getElementById('billboardPoster');
   const billboardVideo = document.getElementById('billboardVideo');
+  if (billboardVideo) {
+    billboardVideo.playsInline = true;
+    billboardVideo.setAttribute('playsinline', '');
+    billboardVideo.setAttribute('webkit-playsinline', 'true');
+  }
   const seriesPageTitle = document.getElementById('seriesPageTitle');
   const seriesFolderSubtitle = document.getElementById('seriesFolderSubtitle');
   const billboardSeasonCount = document.getElementById('billboardSeasonCount');

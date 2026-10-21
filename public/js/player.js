@@ -54,9 +54,11 @@ class ShapnoPlayer {
     this.currentSubtitleIndex = 0;
     this.isTransmuxing = false;
 
-    // Enable AirPlay & TV features
+    // Enable AirPlay & TV features (and inline playback for iOS/WebKit)
     this.video.setAttribute('x-webkit-airplay', 'allow');
     this.video.setAttribute('webkit-playsinline', 'true');
+    this.video.setAttribute('playsinline', 'true');
+    this.video.playsInline = true;
     this.video.preload = 'auto';
 
     this.initEvents();

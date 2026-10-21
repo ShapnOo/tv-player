@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shapno — Download APKs for TV & Mobile</title>
+  <title>Shapno — Download APKs for TV &amp; Mobile</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=Outfit:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
   <style>
     .apps-page {
@@ -25,6 +25,7 @@
       justify-content: space-between;
       padding: 16px 40px;
       background: rgba(10, 11, 14, 0.85);
+      -webkit-backdrop-filter: blur(20px);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
@@ -336,6 +337,273 @@
       color: #94a3b8;
       line-height: 1.5;
     }
+
+    .app-hub-badge {
+      font-size: 11px;
+      font-weight: 800;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.12);
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .hero-badge.loading {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: rgba(56, 189, 248, 0.4);
+      color: #38bdf8;
+    }
+
+    .tv-warning-banner {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 16px;
+      padding: 18px 22px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .tv-warning-icon {
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .tv-warning-text {
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: #fca5a5;
+    }
+
+    .tv-warning-title {
+      color: #fff;
+      font-size: 15px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .quick-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .action-card {
+      border-radius: 16px;
+      padding: 22px;
+    }
+
+    .action-card.downloader-method {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1.5px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .action-card.adb-method {
+      background: rgba(56, 189, 248, 0.08);
+      border: 1.5px solid rgba(56, 189, 248, 0.35);
+    }
+
+    .card-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .pill-method-rec {
+      background: #10b981;
+      color: #000;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .pill-method-adb {
+      background: #38bdf8;
+      color: #000;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .time-estimate-green {
+      color: #10b981;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .time-estimate-blue {
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .action-card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .action-card-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .action-card-desc.mb-12 {
+      margin-bottom: 12px;
+    }
+
+    .short-url-box {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px dashed rgba(16, 185, 129, 0.5);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .short-url-code {
+      color: #34d399;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-copy-sm {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    .tip-subtext {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+
+    .adb-input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .adb-ip-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: monospace;
+      outline: none;
+    }
+
+    .btn-adb-push {
+      background: #38bdf8;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .adb-status-msg {
+      font-size: 12px;
+      color: #94a3b8;
+      min-height: 18px;
+    }
+
+    .step-url-highlight {
+      color: #10b981;
+    }
+
+    .apk-loading-msg {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 40px;
+      color: #94a3b8;
+    }
+
+    .empty-state-full {
+      grid-column: 1 / -1;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .empty-title {
+      color: #fff;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .empty-subtitle {
+      color: #94a3b8;
+      font-size: 14px;
+      max-width: 500px;
+      margin: 0 auto 20px;
+    }
+
+    .btn-refresh-folder {
+      display: inline-flex;
+      width: auto;
+    }
+
+    .empty-state-error {
+      grid-column: 1 / -1;
+      border-color: rgba(229, 9, 20, 0.4);
+    }
+
+    .error-icon {
+      font-size: 40px;
+      margin-bottom: 10px;
+    }
+
+    .error-title {
+      color: #e50914;
+    }
+
+    .error-msg {
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .is-busy {
+      opacity: 0.7;
+    }
+
+    .is-ready {
+      opacity: 1;
+    }
+
+    .status-connecting {
+      color: #38bdf8;
+    }
+
+    .status-success {
+      color: #34d399;
+    }
+
+    .status-error {
+      color: #f87171;
+    }
   </style>
 </head>
 <body class="apps-page">
@@ -346,16 +614,16 @@
         <line x1="19" y1="12" x2="5" y2="12"></line>
         <polyline points="12 19 5 12 12 5"></polyline>
       </svg>
-      Back to Movies & Series
+      Back to Movies &amp; Series
     </a>
 
     <div class="logo-group">
       <span class="live-dot" title="Server Live"></span>
       <h1 class="brand-title">Shapno</h1>
-      <span class="app-hub-badge" style="font-size: 11px; font-weight: 800; color: #10b981; background: rgba(16,185,129,0.12); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.3);">APK HUB</span>
+      <span class="app-hub-badge">APK HUB</span>
     </div>
 
-    <button id="btnRefreshApps" class="action-btn" title="Refresh APK list">
+    <button type="button" id="btnRefreshApps" class="action-btn" title="Refresh APK list">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
       </svg>
@@ -367,8 +635,8 @@
     <!-- Hero Section -->
     <section class="apps-hero">
       <div class="hero-badge-row">
-        <span class="hero-badge">📺 Hisense 50A6F3 4K UHD TV & Android</span>
-        <span id="apkCountBadge" class="hero-badge" style="background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">Loading APKs...</span>
+        <span class="hero-badge">📺 Hisense 50A6F3 4K UHD TV &amp; Android</span>
+        <span id="apkCountBadge" class="hero-badge loading">Loading APKs...</span>
       </div>
       <h2 class="hero-title">Shapno TV App Installation Hub</h2>
       <p class="hero-description">
@@ -376,53 +644,53 @@
       </p>
 
       <!-- TV Browser Warning Notice Banner -->
-      <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 16px; padding: 18px 22px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 14px;">
-        <span style="font-size: 26px; line-height: 1;">⚠️</span>
-        <div style="font-size: 13.5px; line-height: 1.6; color: #fca5a5;">
-          <strong style="color: #fff; font-size: 15px; display: block; margin-bottom: 4px;">Why does the Hisense TV Browser say <em>"This function is not supported"</em>?</strong>
-          Smart TV built-in web browsers deliberately lock down downloading files to prevent storage corruption. <strong>Do not worry!</strong> Choose any of the <strong>3 official & 100% working methods</strong> below to install in under 1 minute.
+      <div class="tv-warning-banner">
+        <span class="tv-warning-icon">⚠️</span>
+        <div class="tv-warning-text">
+          <strong class="tv-warning-title">Why does the Hisense TV Browser say <em>"This function is not supported"</em>?</strong>
+          Smart TV built-in web browsers deliberately lock down downloading files to prevent storage corruption. <strong>Do not worry!</strong> Choose any of the <strong>3 official &amp; 100% working methods</strong> below to install in under 1 minute.
         </div>
       </div>
 
       <!-- Quick Action Cards: Downloader App & 1-Click ADB -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div class="quick-actions-grid">
         <!-- Option 1: Downloader App -->
-        <div style="background: rgba(16, 185, 129, 0.08); border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: 16px; padding: 22px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-            <span style="background: #10b981; color: #000; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase;">Method 1 (Recommended)</span>
-            <span style="color: #10b981; font-size: 12px; font-weight: 600;">⏱️ 30 Seconds</span>
+        <div class="action-card downloader-method">
+          <div class="card-header-row">
+            <span class="pill-method-rec">Method 1 (Recommended)</span>
+            <span class="time-estimate-green">⏱️ 30 Seconds</span>
           </div>
-          <h4 style="font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 8px;">Use TV "Downloader" App</h4>
-          <p style="font-size: 13px; color: #94a3b8; margin-bottom: 14px; line-height: 1.5;">
+          <h4 class="action-card-title">Use TV "Downloader" App</h4>
+          <p class="action-card-desc">
             1. Open <strong>Google Play Store</strong> on your TV and install the free app <strong>Downloader</strong> (by AFTVnews).<br>
             2. Open Downloader and enter this short code / URL:
           </p>
-          <div style="background: rgba(0, 0, 0, 0.6); border: 1px dashed rgba(16, 185, 129, 0.5); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
-            <code id="tvShortUrl" style="color: #34d399; font-weight: 800; font-size: 16px; letter-spacing: 0.5px;">http://10.81.100.62:5050/d</code>
-            <button class="btn-copy-url" style="padding: 6px 10px; font-size: 12px;" onclick="copyLink(document.getElementById('tvShortUrl').textContent)" title="Copy URL">Copy</button>
+          <div class="short-url-box">
+            <code id="tvShortUrl" class="short-url-code">http://10.81.100.62:5050/d</code>
+            <button type="button" class="btn-copy-url btn-copy-sm" onclick="copyLink(document.getElementById('tvShortUrl').textContent)" title="Copy URL">Copy</button>
           </div>
-          <div style="margin-top: 10px; font-size: 12px; color: #cbd5e1;">
+          <div class="tip-subtext">
             👉 <em>It downloads and immediately pops up the <strong>Install</strong> button on TV!</em>
           </div>
         </div>
 
         <!-- Option 2: 1-Click Wireless Push from Laptop -->
-        <div style="background: rgba(56, 189, 248, 0.08); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 22px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-            <span style="background: #38bdf8; color: #000; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase;">Method 2 (Direct Push)</span>
-            <span style="color: #38bdf8; font-size: 12px; font-weight: 600;">⚡ 1-Click Install</span>
+        <div class="action-card adb-method">
+          <div class="card-header-row">
+            <span class="pill-method-adb">Method 2 (Direct Push)</span>
+            <span class="time-estimate-blue">⚡ 1-Click Install</span>
           </div>
-          <h4 style="font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 8px;">Install Wirelessly from Laptop</h4>
-          <p style="font-size: 13px; color: #94a3b8; margin-bottom: 12px; line-height: 1.5;">
+          <h4 class="action-card-title">Install Wirelessly from Laptop</h4>
+          <p class="action-card-desc mb-12">
             Enter your Hisense TV's IP address (from TV Settings → Network) and push the APK straight to your TV:
           </p>
-          <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-            <input type="text" id="tvIpInput" placeholder="10.81.100.XX" value="10.81.100." style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 14px; font-weight: 600; font-family: monospace; outline: none;">
-            <button id="btnAdbInstall" onclick="installViaAdb()" style="background: #38bdf8; color: #000; border: none; border-radius: 10px; padding: 10px 18px; font-weight: 700; font-size: 13.5px; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+          <div class="adb-input-row">
+            <input type="text" id="tvIpInput" aria-label="Hisense TV IP Address" placeholder="10.81.100.XX" value="10.81.100." class="adb-ip-input">
+            <button type="button" id="btnAdbInstall" onclick="installViaAdb()" class="btn-adb-push">
               🚀 Push to TV
             </button>
           </div>
-          <div id="adbStatusMsg" style="font-size: 12px; color: #94a3b8; min-height: 18px;">
+          <div id="adbStatusMsg" class="adb-status-msg">
             Requires TV Settings → Device Preferences → Developer options (or ADB) ON.
           </div>
         </div>
@@ -448,7 +716,7 @@
           <p>
             1. Search and install <strong>Downloader</strong> from Google Play Store on your Hisense TV.<br>
             2. Open Downloader and enter:<br>
-            <strong style="color: #10b981;" id="stepShortUrl">http://10.81.100.62:5050/d</strong><br>
+            <strong id="stepShortUrl" class="step-url-highlight">http://10.81.100.62:5050/d</strong><br>
             3. Tap <strong>Go</strong>. The APK will download and prompt to install immediately.
           </p>
         </div>
@@ -495,7 +763,7 @@
     async function loadApks() {
       try {
         apkGrid.innerHTML = `
-          <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #94a3b8;">
+          <div class="apk-loading-msg">
             Scanning Media/mobile app/ folder...
           </div>
         `;
@@ -508,13 +776,13 @@
 
         if (apps.length === 0) {
           apkGrid.innerHTML = `
-            <div class="empty-state" style="grid-column: 1 / -1;">
-              <div style="font-size: 48px; margin-bottom: 12px;">📦</div>
-              <h3 style="color: #fff; font-size: 20px; margin-bottom: 8px;">No APKs Found in "Media/mobile app"</h3>
-              <p style="color: #94a3b8; font-size: 14px; max-width: 500px; margin: 0 auto 20px;">
+            <div class="empty-state empty-state-full">
+              <div class="empty-icon">📦</div>
+              <h3 class="empty-title">No APKs Found in "Media/mobile app"</h3>
+              <p class="empty-subtitle">
                 Copy your <code>.apk</code> files into <code>Media/mobile app/</code> on your laptop, then click Refresh!
               </p>
-              <button class="btn-download-apk" style="display: inline-flex; width: auto;" onclick="loadApks()">Refresh Folder</button>
+              <button type="button" class="btn-download-apk btn-refresh-folder" onclick="loadApks()">Refresh Folder</button>
             </div>
           `;
           return;
@@ -553,7 +821,7 @@
                   </svg>
                   Download APK
                 </a>
-                <button class="btn-copy-url" title="Copy direct download link" onclick="copyLink('${directUrl}')">
+                <button type="button" class="btn-copy-url" title="Copy direct download link" onclick="copyLink('${directUrl}')">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -567,10 +835,10 @@
       } catch (err) {
         console.error('Error loading APKs:', err);
         apkGrid.innerHTML = `
-          <div class="empty-state" style="grid-column: 1 / -1; border-color: rgba(229, 9, 20, 0.4);">
-            <div style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
-            <h3 style="color: #e50914;">Failed to load APKs</h3>
-            <p style="color: #94a3b8; font-size: 13px;">${err.message}</p>
+          <div class="empty-state empty-state-error">
+            <div class="error-icon">⚠️</div>
+            <h3 class="error-title">Failed to load APKs</h3>
+            <p class="error-msg">${escapeHtml(err.message)}</p>
           </div>
         `;
       }
@@ -614,9 +882,10 @@
       }
 
       btn.disabled = true;
-      btn.style.opacity = '0.7';
+      btn.classList.add('is-busy');
+      btn.classList.remove('is-ready');
       btn.textContent = '⏳ Connecting to TV...';
-      status.style.color = '#38bdf8';
+      status.className = 'adb-status-msg status-connecting';
       status.textContent = `Connecting to Hisense TV at ${tvIp}:5555...`;
 
       try {
@@ -628,22 +897,23 @@
         const data = await res.json();
 
         if (data.success) {
-          status.style.color = '#34d399';
+          status.className = 'adb-status-msg status-success';
           status.innerHTML = `✅ <strong>Success:</strong> ${escapeHtml(data.message)}`;
           showToast('🎉 Shapno TV installed on your TV!');
           btn.textContent = '✅ Installed!';
         } else {
-          status.style.color = '#f87171';
+          status.className = 'adb-status-msg status-error';
           status.innerHTML = `❌ <strong>Failed:</strong> ${escapeHtml(data.error || 'Connection failed')}`;
           btn.textContent = 'Retry Install';
         }
       } catch (err) {
-        status.style.color = '#f87171';
+        status.className = 'adb-status-msg status-error';
         status.innerHTML = `❌ <strong>Error:</strong> ${escapeHtml(err.message)}`;
         btn.textContent = 'Retry Install';
       } finally {
         btn.disabled = false;
-        btn.style.opacity = '1';
+        btn.classList.remove('is-busy');
+        btn.classList.add('is-ready');
       }
     }
 
