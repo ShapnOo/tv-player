@@ -33,7 +33,9 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
   EpisodeItem? _previewEpisode;
   VideoPlayerController? _bannerController;
   bool _isBannerInitialized = false;
+  int _bannerSessionId = 0;
 
+  final ScrollController _seriesScrollController = ScrollController();
   final FocusNode _screenFocusNode = FocusNode(debugLabel: 'SeriesScreenFocus');
   final FocusNode _backButtonFocusNode = FocusNode(debugLabel: 'SeriesBackButton');
 
@@ -87,8 +89,83 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
     }
   }
 
+  void _ensureVisibleInSeriesScroll(BuildContext cardContext) {
+    if (!mounted || !_seriesScrollController.hasClients) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_seriesScrollController.hasClients) return;
+      final renderBox = cardContext.findRenderObject() as RenderBox?;
+      if (renderBox == null || !renderBox.hasSize) return;
+
+      final cardOrigin = renderBox.localToGlobal(Offset.zero);
+      final cardTop = cardOrigin.dy;
+      final cardBottom = cardTop + renderBox.size.height * 1.05;
+      final screenHeight = MediaQuery.of(cardContext).size.height;
+
+      const double safeBottomMargin = 95.0;
+      const double safeTopMargin = 70.0;
+
+      double delta = 0.0;
+      if (cardBottom > screenHeight - safeBottomMargin) {
+        delta = cardBottom - (screenHeight - safeBottomMargin) + 25.0;
+      } else if (cardTop < safeTopMargin) {
+        delta = -(safeTopMargin - cardTop + 25.0);
+      }
+
+      if (delta != 0.0) {
+        final current = _seriesScrollController.offset;
+        final maxScroll = _seriesScrollController.position.maxScrollExtent;
+        final target = (current + delta).clamp(0.0, maxScroll);
+        if ((target - current).abs() > 4.0) {
+          _seriesScrollController.animateTo(
+            target,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      }
+    });
+  }
+
+  void _scrollToTopIfNeeded() {
+    if (_seriesScrollController.hasClients && _seriesScrollController.offset > 0) {
+      _seriesScrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  Future<void> _disposeBannerController() async {
+    _bannerSessionId++;
+    final old = _bannerController;
+    _bannerController = null;
+    if (mounted) {
+      _safeSetState(() => _isBannerInitialized = false);
+    }
+    if (old != null) {
+      try {
+        await old.pause();
+        await old.dispose();
+      } catch (_) {}
+    }
+  }
+
   Future<void> _initBannerVideo(EpisodeItem ep) async {
+    final currentSession = ++_bannerSessionId;
+
     try {
+      final oldController = _bannerController;
+      _bannerController = null;
+      if (mounted) _safeSetState(() => _isBannerInitialized = false);
+      if (oldController != null) {
+        await oldController.pause().catchError((_) {});
+        await oldController.dispose().catchError((_) {});
+      }
+
+      if (currentSession != _bannerSessionId || !mounted) return;
+
       final url = ep.isDolbyVision
           ? ep.compatUrl(widget.baseUrl)
           : ep.streamUrl(widget.baseUrl);
@@ -99,26 +176,63 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
       );
 
       await controller.initialize();
+
+      if (currentSession != _bannerSessionId || !mounted) {
+        await controller.pause().catchError((_) {});
+        await controller.dispose().catchError((_) {});
+        return;
+      }
+
       await controller.setVolume(0.0); // Muted for ambient TV billboard
       await controller.setLooping(true);
       await controller.play();
 
-      // Soft seek past studio logo asynchronously if duration permits
-      if (controller.value.duration.inSeconds > 50) {
-        controller.seekTo(const Duration(seconds: 20)).catchError((_) {});
+      if (currentSession != _bannerSessionId || !mounted) {
+        await controller.pause().catchError((_) {});
+        await controller.dispose().catchError((_) {});
+        return;
       }
 
-      if (mounted) {
+      // Seek to random position between 15% and 75% of episode runtime
+      final totalSec = controller.value.duration.inSeconds;
+      if (totalSec > 60) {
+        final minSec = (totalSec * 0.15).toInt();
+        final maxSec = (totalSec * 0.75).toInt();
+        final span = max(1, maxSec - minSec);
+        final randomSec = minSec + Random().nextInt(span);
+        controller.seekTo(Duration(seconds: randomSec)).catchError((_) {});
+      } else if (totalSec > 20) {
+        final randomSec = Random().nextInt(totalSec - 10) + 5;
+        controller.seekTo(Duration(seconds: randomSec)).catchError((_) {});
+      }
+
+      // Re-seed on loop
+      controller.addListener(() {
+        if (currentSession != _bannerSessionId) return;
+        if (controller.value.isInitialized &&
+            controller.value.duration.inSeconds > 60 &&
+            controller.value.position >= controller.value.duration - const Duration(seconds: 3)) {
+          final tSec = controller.value.duration.inSeconds;
+          final minS = (tSec * 0.15).toInt();
+          final maxS = (tSec * 0.75).toInt();
+          final span = max(1, maxS - minS);
+          final rndSec = minS + Random().nextInt(span);
+          controller.seekTo(Duration(seconds: rndSec)).catchError((_) {});
+        }
+      });
+
+      if (mounted && currentSession == _bannerSessionId) {
         _safeSetState(() {
           _bannerController = controller;
           _isBannerInitialized = true;
         });
       } else {
-        await controller.dispose();
+        await controller.pause().catchError((_) {});
+        await controller.dispose().catchError((_) {});
       }
     } catch (e) {
       debugPrint('[SeriesBanner] Video preview notice (poster fallback): $e');
-      if (mounted) {
+      if (mounted && currentSession == _bannerSessionId) {
         _safeSetState(() {
           _isBannerInitialized = false;
         });
@@ -127,7 +241,7 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
   }
 
   void _handleExit() {
-    _bannerController?.pause();
+    _disposeBannerController();
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
@@ -136,8 +250,9 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
   Future<void> _playEpisode(EpisodeItem ep, {int resumePos = 0}) async {
     if (ep.id.isEmpty) return;
 
-    // Pause background preview so TV hardware decoder is dedicated to 4K player
-    _bannerController?.pause();
+    // Fully release hardware decoder so TV player gets exclusive access
+    await _disposeBannerController();
+    if (!mounted) return;
 
     await Navigator.push(
       context,
@@ -162,16 +277,16 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
       widget.apiService!.fetchProgress();
     }
 
-    // Resume billboard loop upon return
-    if (mounted && _isBannerInitialized && _bannerController != null) {
-      _bannerController!.play();
-      _safeSetState(() {});
+    // Resume billboard loop upon return if still on this screen
+    if (mounted && _previewEpisode != null) {
+      _initBannerVideo(_previewEpisode!);
     }
   }
 
   @override
   void dispose() {
-    _bannerController?.dispose();
+    _disposeBannerController();
+    _seriesScrollController.dispose();
     _screenFocusNode.dispose();
     _backButtonFocusNode.dispose();
     super.dispose();
@@ -225,8 +340,9 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Live Looping Video
-                    if (_isBannerInitialized && _bannerController != null)
+                    if (_isBannerInitialized &&
+                        _bannerController != null &&
+                        _bannerController!.value.isInitialized)
                       FittedBox(
                         fit: BoxFit.cover,
                         alignment: Alignment.centerRight,
@@ -312,6 +428,7 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
               // 2. Main Content
               SafeArea(
                 child: SingleChildScrollView(
+                  controller: _seriesScrollController,
                   padding: const EdgeInsets.fromLTRB(48, 16, 48, 40),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -327,6 +444,9 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5.5),
                             fontSize: 12,
                             borderRadius: 16,
+                            onFocusChange: (hasF) {
+                              if (hasF) _scrollToTopIfNeeded();
+                            },
                             onTap: _handleExit,
                           ),
                           const SizedBox(width: 16),
@@ -504,6 +624,9 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
                                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                                     fontSize: 12.5,
                                     borderRadius: 8,
+                                    onFocusChange: (hasF) {
+                                      if (hasF) _scrollToTopIfNeeded();
+                                    },
                                     onTap: () => _playEpisode(_focusedEpisode, resumePos: focusedProg.posSeconds),
                                   ),
                                   TVFocusButton(
@@ -513,6 +636,9 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
                                     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                                     fontSize: 12,
                                     borderRadius: 8,
+                                    onFocusChange: (hasF) {
+                                      if (hasF) _scrollToTopIfNeeded();
+                                    },
                                     onTap: () => _playEpisode(_focusedEpisode, resumePos: 1),
                                   ),
                                 ] else ...[
@@ -526,6 +652,9 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                                     fontSize: 12.5,
                                     borderRadius: 8,
+                                    onFocusChange: (hasF) {
+                                      if (hasF) _scrollToTopIfNeeded();
+                                    },
                                     onTap: () => _playEpisode(_focusedEpisode),
                                   ),
                                 ],
@@ -589,17 +718,19 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
                             final epWatched = prog?.isWatched ?? false;
                             final epInProgress = prog?.inProgress ?? false;
 
-                            return TVFocusCard(
-                              width: 250,
-                              height: 150,
-                              onFocusChange: (hasF) {
-                                if (hasF) {
-                                  _safeSetState(() {
-                                    _focusedEpisode = ep;
-                                  });
-                                }
-                              },
-                              onTap: () => _playEpisode(ep),
+                            return Builder(
+                              builder: (cardCtx) => TVFocusCard(
+                                width: 250,
+                                height: 150,
+                                onFocusChange: (hasF) {
+                                  if (hasF) {
+                                    _ensureVisibleInSeriesScroll(cardCtx);
+                                    _safeSetState(() {
+                                      _focusedEpisode = ep;
+                                    });
+                                  }
+                                },
+                                onTap: () => _playEpisode(ep),
                               child: Stack(
                                 fit: StackFit.expand,
                                 children: [
@@ -770,7 +901,7 @@ class _TVSeriesScreenState extends State<TVSeriesScreen> {
                                     ),
                                 ],
                               ),
-                            );
+                            ));
                           },
                         ),
                       ),

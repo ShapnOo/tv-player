@@ -135,7 +135,10 @@ class _TVPlayerScreenState extends State<TVPlayerScreen> {
     try {
       if (_controller != null) {
         _controller!.removeListener(_videoListener);
-        await _controller!.dispose();
+        try {
+          await _controller!.pause();
+          await _controller!.dispose();
+        } catch (_) {}
         _controller = null;
       }
 
@@ -219,8 +222,9 @@ class _TVPlayerScreenState extends State<TVPlayerScreen> {
 
       setState(() {
         _hasError = true;
-        _userFriendlyError =
-            'This video format (Dolby Vision / HEVC) exceeded hardware codec limit. You can play it using Universal Compatibility mode.';
+        _userFriendlyError = widget.isDolbyVision
+            ? 'This video format (Dolby Vision / HEVC) requires special decoding. You can play it using Universal Compatibility mode below.'
+            : 'Playback encountered an issue ($e). Try switching playback mode below.';
       });
     }
   }
@@ -449,6 +453,13 @@ class _TVPlayerScreenState extends State<TVPlayerScreen> {
     _progressSaveTimer?.cancel();
     _saveCurrentProgress();
     WakelockPlus.disable();
+    final c = _controller;
+    _controller = null;
+    if (c != null) {
+      c.removeListener(_videoListener);
+      c.pause().catchError((_) {});
+      c.dispose().catchError((_) {});
+    }
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
@@ -471,9 +482,12 @@ class _TVPlayerScreenState extends State<TVPlayerScreen> {
     _restartFocusNode.dispose();
     _modeFocusNode.dispose();
     _timelineFocusNode.dispose();
-    if (_controller != null) {
-      _controller!.removeListener(_videoListener);
-      _controller!.dispose();
+    final c = _controller;
+    _controller = null;
+    if (c != null) {
+      c.removeListener(_videoListener);
+      c.pause().catchError((_) {});
+      c.dispose().catchError((_) {});
     }
     super.dispose();
   }

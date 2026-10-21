@@ -34,6 +34,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
   MovieItem? _bannerMovie;
   VideoPlayerController? _bannerController;
   bool _isBannerInitialized = false;
+  int _bannerSessionId = 0;
 
   final ScrollController _mainScrollController = ScrollController();
   DateTime? _lastBackPressTime;
@@ -48,7 +49,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
   @override
   void dispose() {
     widget.apiService.removeListener(_onServiceUpdate);
-    _bannerController?.dispose();
+    _disposeBannerController();
     _mainScrollController.dispose();
     super.dispose();
   }
@@ -121,6 +122,30 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
     }
   }
 
+  Future<void> _disposeBannerController() async {
+    _bannerSessionId++;
+    final old = _bannerController;
+    _bannerController = null;
+    if (mounted) {
+      _safeSetState(() => _isBannerInitialized = false);
+    }
+    if (old != null) {
+      try {
+        await old.pause();
+        await old.dispose();
+      } catch (_) {}
+    }
+  }
+
+  void _resumeBannerPreview() {
+    if (!mounted) return;
+    if (_bannerMovie != null) {
+      _initBannerVideo(_bannerMovie!);
+    } else {
+      _checkAndStartBanner();
+    }
+  }
+
   void _checkAndStartBanner() {
     if (_bannerMovie == null && widget.apiService.movies.isNotEmpty) {
       final randIdx = Random().nextInt(widget.apiService.movies.length);
@@ -132,13 +157,18 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
   }
 
   Future<void> _initBannerVideo(MovieItem movie) async {
+    final currentSession = ++_bannerSessionId;
+
     try {
       final oldController = _bannerController;
       _bannerController = null;
       if (mounted) _safeSetState(() => _isBannerInitialized = false);
       if (oldController != null) {
-        await oldController.dispose();
+        await oldController.pause().catchError((_) {});
+        await oldController.dispose().catchError((_) {});
       }
+
+      if (currentSession != _bannerSessionId || !mounted) return;
 
       final url = movie.isDolbyVision
           ? movie.compatUrl(widget.apiService.baseUrl)
@@ -150,9 +180,22 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
       );
 
       await controller.initialize();
+
+      if (currentSession != _bannerSessionId || !mounted) {
+        await controller.pause().catchError((_) {});
+        await controller.dispose().catchError((_) {});
+        return;
+      }
+
       await controller.setVolume(0.0); // Ambient Muted Loop
       await controller.setLooping(true);
       await controller.play();
+
+      if (currentSession != _bannerSessionId || !mounted) {
+        await controller.pause().catchError((_) {});
+        await controller.dispose().catchError((_) {});
+        return;
+      }
 
       // Seek to a random time between 15% and 75% so it plays an exciting scene, not from the start
       final totalSec = controller.value.duration.inSeconds;
@@ -169,6 +212,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
 
       // When the clip reaches its end, seek to another random time rather than looping to 00:00
       controller.addListener(() {
+        if (currentSession != _bannerSessionId) return;
         if (controller.value.isInitialized &&
             controller.value.duration.inSeconds > 60 &&
             controller.value.position >= controller.value.duration - const Duration(seconds: 3)) {
@@ -181,24 +225,27 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
         }
       });
 
-      if (mounted) {
+      if (mounted && currentSession == _bannerSessionId) {
         _safeSetState(() {
           _bannerController = controller;
           _isBannerInitialized = true;
         });
       } else {
-        await controller.dispose();
+        await controller.pause().catchError((_) {});
+        await controller.dispose().catchError((_) {});
       }
     } catch (e) {
       debugPrint('[HomeBanner] Video preview notice (poster fallback): $e');
-      if (mounted) {
+      if (mounted && currentSession == _bannerSessionId) {
         _safeSetState(() => _isBannerInitialized = false);
       }
     }
   }
 
   Future<void> _openMovie(MovieItem movie, {int resumePos = 0}) async {
-    _bannerController?.pause();
+    // Release hardware decoder completely before launching player
+    await _disposeBannerController();
+    if (!mounted) return;
 
     await Navigator.push(
       context,
@@ -218,13 +265,15 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
       ),
     );
 
-    if (mounted && _isBannerInitialized && _bannerController != null) {
-      _bannerController!.play();
+    if (mounted) {
+      _resumeBannerPreview();
     }
   }
 
   Future<void> _openMovieCompat(MovieItem movie) async {
-    _bannerController?.pause();
+    // Release hardware decoder completely before launching player
+    await _disposeBannerController();
+    if (!mounted) return;
 
     await Navigator.push(
       context,
@@ -243,13 +292,15 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
       ),
     );
 
-    if (mounted && _isBannerInitialized && _bannerController != null) {
-      _bannerController!.play();
+    if (mounted) {
+      _resumeBannerPreview();
     }
   }
 
   Future<void> _openEpisode(EpisodeItem ep) async {
-    _bannerController?.pause();
+    // Release hardware decoder completely before launching player
+    await _disposeBannerController();
+    if (!mounted) return;
 
     await Navigator.push(
       context,
@@ -268,13 +319,15 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
       ),
     );
 
-    if (mounted && _isBannerInitialized && _bannerController != null) {
-      _bannerController!.play();
+    if (mounted) {
+      _resumeBannerPreview();
     }
   }
 
   Future<void> _openSeries(SeriesItem series) async {
-    _bannerController?.pause();
+    // Release hardware decoder completely before entering Series screen
+    await _disposeBannerController();
+    if (!mounted) return;
 
     await Navigator.push(
       context,
@@ -287,8 +340,8 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
       ),
     );
 
-    if (mounted && _isBannerInitialized && _bannerController != null) {
-      _bannerController!.play();
+    if (mounted) {
+      _resumeBannerPreview();
     }
   }
 
@@ -393,7 +446,10 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
                 fit: StackFit.expand,
                 children: [
                   // Live Video Trailer
-                  if (_isBannerInitialized && _bannerController != null && isMovieHero)
+                  if (_isBannerInitialized &&
+                      _bannerController != null &&
+                      _bannerController!.value.isInitialized &&
+                      isMovieHero)
                     FittedBox(
                       fit: BoxFit.cover,
                       alignment: Alignment.centerRight,
@@ -866,6 +922,9 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     fontSize: 12.5,
                     borderRadius: 8,
+                    onFocusChange: (hasF) {
+                      if (hasF) _scrollToTopIfNeeded();
+                    },
                     onTap: () => _openMovie(currentMovie, resumePos: prog.posSeconds),
                   ),
                   TVFocusButton(
@@ -875,6 +934,9 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                     fontSize: 12,
                     borderRadius: 8,
+                    onFocusChange: (hasF) {
+                      if (hasF) _scrollToTopIfNeeded();
+                    },
                     onTap: () => _openMovie(currentMovie, resumePos: 1),
                   ),
                 ] else ...[
@@ -886,6 +948,9 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                     fontSize: 12.5,
                     borderRadius: 8,
+                    onFocusChange: (hasF) {
+                      if (hasF) _scrollToTopIfNeeded();
+                    },
                     onTap: () => _openMovie(currentMovie),
                   ),
                 ],
@@ -897,6 +962,9 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                     fontSize: 12,
                     borderRadius: 8,
+                    onFocusChange: (hasF) {
+                      if (hasF) _scrollToTopIfNeeded();
+                    },
                     onTap: () => _openMovieCompat(currentMovie),
                   ),
               ] else if (!isMovie && currentSeries != null)
@@ -908,6 +976,9 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                   fontSize: 12.5,
                   borderRadius: 8,
+                  onFocusChange: (hasF) {
+                    if (hasF) _scrollToTopIfNeeded();
+                  },
                   onTap: () => _openSeries(currentSeries),
                 ),
               TVFocusButton(
@@ -917,6 +988,9 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                 fontSize: 12,
                 borderRadius: 8,
+                onFocusChange: (hasF) {
+                  if (hasF) _scrollToTopIfNeeded();
+                },
                 onTap: _openSettings,
               ),
             ],
@@ -996,24 +1070,28 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
           final percent = prog?.percent ?? 0;
           final posStr = prog != null ? prog.formatTime(prog.posSeconds) : '';
 
-          return TVFocusCard(
-            width: 240,
-            height: 145,
-            onFocusChange: (hasF) {
-              if (hasF && isMovieItem) {
-                _safeSetState(() {
-                  _focusedMovie = movie;
-                  _focusedSeries = null;
-                });
-              }
-            },
-            onTap: () {
-              if (isMovieItem) {
-                _openMovie(movie!, resumePos: prog?.posSeconds ?? 0);
-              } else {
-                _openEpisode(ep!);
-              }
-            },
+          return Builder(
+            builder: (cardCtx) => TVFocusCard(
+              width: 240,
+              height: 145,
+              onFocusChange: (hasF) {
+                if (hasF) {
+                  _ensureVisibleInMainScroll(cardCtx);
+                  if (isMovieItem) {
+                    _safeSetState(() {
+                      _focusedMovie = movie;
+                      _focusedSeries = null;
+                    });
+                  }
+                }
+              },
+              onTap: () {
+                if (isMovieItem) {
+                  _openMovie(movie!, resumePos: prog?.posSeconds ?? 0);
+                } else {
+                  _openEpisode(ep!);
+                }
+              },
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -1114,7 +1192,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
                 ),
               ],
             ),
-          );
+          ));
         },
       ),
     );
@@ -1135,18 +1213,20 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
           final isWatched = prog?.isWatched ?? false;
           final inProgress = prog?.inProgress ?? false;
 
-          return TVFocusCard(
-            width: 240,
-            height: 145,
-            onFocusChange: (hasF) {
-              if (hasF) {
-                _safeSetState(() {
-                  _focusedMovie = movie;
-                  _focusedSeries = null;
-                });
-              }
-            },
-            onTap: () => _openMovie(movie),
+          return Builder(
+            builder: (cardCtx) => TVFocusCard(
+              width: 240,
+              height: 145,
+              onFocusChange: (hasF) {
+                if (hasF) {
+                  _ensureVisibleInMainScroll(cardCtx);
+                  _safeSetState(() {
+                    _focusedMovie = movie;
+                    _focusedSeries = null;
+                  });
+                }
+              },
+              onTap: () => _openMovie(movie),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -1359,7 +1439,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
                   ),
               ],
             ),
-          );
+          ));
         },
       ),
     );
@@ -1376,18 +1456,20 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
         separatorBuilder: (_, _) => const SizedBox(width: 16),
         itemBuilder: (context, index) {
           final series = api.series[index];
-          return TVFocusCard(
-            width: 240,
-            height: 145,
-            onFocusChange: (hasF) {
-              if (hasF) {
-                _safeSetState(() {
-                  _focusedSeries = series;
-                  _focusedMovie = null;
-                });
-              }
-            },
-            onTap: () => _openSeries(series),
+          return Builder(
+            builder: (cardCtx) => TVFocusCard(
+              width: 240,
+              height: 145,
+              onFocusChange: (hasF) {
+                if (hasF) {
+                  _ensureVisibleInMainScroll(cardCtx);
+                  _safeSetState(() {
+                    _focusedSeries = series;
+                    _focusedMovie = null;
+                  });
+                }
+              },
+              onTap: () => _openSeries(series),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -1488,7 +1570,7 @@ class _TVHomeScreenState extends State<TVHomeScreen> {
                 ),
               ],
             ),
-          );
+          ));
         },
       ),
     );
