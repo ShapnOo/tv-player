@@ -125,35 +125,52 @@
     billboardPoster.style.backgroundImage = `url('/api/thumbnail/${activePreviewEpisode.id}')`;
     previewChipText.textContent = `Previewing: Season ${activePreviewEpisode.season || 1} • Episode ${activePreviewEpisode.episode || 1}`;
 
-    // Browser format compatibility check
-    const ext = activePreviewEpisode.fileName.split('.').pop().toLowerCase();
-    const canPlayMkv = (
-      billboardVideo.canPlayType('video/x-matroska') !== '' ||
-      billboardVideo.canPlayType('video/webm; codecs="vp8, vorbis"') !== ''
-    );
-
-    const streamSrc = (ext === 'mkv' && !canPlayMkv)
-      ? `/api/transmux/${activePreviewEpisode.id}`
-      : `/api/stream/${activePreviewEpisode.id}`;
-
+    // Start with high-speed direct stream (instant start, 0% CPU, native browser demuxing)
+    // If the browser engine cannot decode the container (e.g., Safari on MKV), onerror falls back to hardware transmuxer
     billboardVideo.classList.remove('loaded');
-    billboardVideo.src = streamSrc;
+
+    // Strict muted & inline attributes required for browser autoplay compliance (Safari, iOS, Chrome)
     billboardVideo.muted = isAudioMuted;
+    billboardVideo.defaultMuted = isAudioMuted;
+    billboardVideo.playsInline = true;
+    billboardVideo.setAttribute('muted', '');
+    billboardVideo.setAttribute('playsinline', '');
+    billboardVideo.setAttribute('webkit-playsinline', 'true');
 
-    // Start 30 seconds into the episode to skip studio intro and showcase real scenes
-    const onLoadedMetadata = () => {
-      const seekTime = Math.min(45, (billboardVideo.duration || 100) * 0.15);
-      billboardVideo.currentTime = seekTime;
-    };
-    billboardVideo.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
+    billboardVideo.src = `/api/stream/${activePreviewEpisode.id}`;
 
-    billboardVideo.play().then(() => {
+    // Smoothly fade in video once playback actually begins rendering frames
+    billboardVideo.onplaying = () => {
       billboardVideo.classList.add('loaded');
-    }).catch(err => {
-      console.log('[Billboard Preview] Video autoplay notice:', err.message);
-    });
+    };
 
-    // When the episode preview video reaches near the end, pick another random episode to loop!
+    billboardVideo.onerror = () => {
+      if (!billboardVideo.src.includes('/api/transmux/')) {
+        console.log('[Billboard Preview] Direct stream unsupported, switching to hardware transmuxer...');
+        billboardVideo.src = `/api/transmux/${activePreviewEpisode.id}?start=30`;
+        billboardVideo.play().catch(() => {});
+      } else {
+        console.warn('[Billboard Preview] Video playback error, displaying scene poster fallback:', billboardVideo.error);
+        billboardVideo.classList.remove('loaded');
+      }
+    };
+
+    const playPromise = billboardVideo.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.log('[Billboard Preview] Video autoplay deferred:', err.message);
+        // If browser blocks background autoplay before user interaction, resume on first click/key
+        const resumeOnGesture = () => {
+          billboardVideo.play().then(() => billboardVideo.classList.add('loaded')).catch(() => {});
+          window.removeEventListener('click', resumeOnGesture);
+          window.removeEventListener('keydown', resumeOnGesture);
+        };
+        window.addEventListener('click', resumeOnGesture, { once: true });
+        window.addEventListener('keydown', resumeOnGesture, { once: true });
+      });
+    }
+
+    // When the episode preview video reaches the end, pick another random episode to loop
     billboardVideo.onended = () => {
       startRandomPreview();
     };

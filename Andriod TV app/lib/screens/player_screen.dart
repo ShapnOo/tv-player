@@ -115,9 +115,6 @@ class _TVPlayerScreenState extends State<TVPlayerScreen> {
   String _getUrlForMode(StreamMode mode) {
     switch (mode) {
       case StreamMode.direct:
-        if ((Platform.isMacOS || Platform.isIOS) && widget.isDolbyVision) {
-          return widget.compatUrl ?? '${widget.videoUrl}.mp4?compat=1';
-        }
         return widget.videoUrl;
       case StreamMode.compat:
         return widget.compatUrl ?? '${widget.videoUrl}.mp4?compat=1';

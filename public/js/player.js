@@ -199,22 +199,22 @@ class ShapnoPlayer {
     const nextEp = this.findNextEpisode();
     this.btnNextEp.style.display = nextEp ? 'inline-flex' : 'none';
 
-    // Device / Browser Format Compatibility Check
-    const ext = item.fileName.split('.').pop().toLowerCase();
-    const canPlayMkv = (
-      this.video.canPlayType('video/x-matroska') !== '' ||
-      this.video.canPlayType('video/webm; codecs="vp8, vorbis"') !== ''
-    );
+    // Device / Browser Format Compatibility Check:
+    // Try direct byte-range stream first (supports native scrubbing, full timeline duration, 0% CPU)
+    // If browser cannot decode container (e.g., Safari on MKV), onerror automatically falls back to hardware transmuxer
+    this.isTransmuxing = false;
+    this.video.src = `/api/stream/${item.id}`;
 
-    // If MKV on Safari / TV browser that lacks MKV container support, use real-time transmuxer
-    if (ext === 'mkv' && !canPlayMkv) {
-      this.isTransmuxing = true;
-      this.subtitleEl.textContent += ' • ⚡ TV Hardware Stream';
-      this.video.src = `/api/transmux/${item.id}`;
-    } else {
-      this.isTransmuxing = false;
-      this.video.src = `/api/stream/${item.id}`;
-    }
+    this.video.onerror = () => {
+      if (!this.isTransmuxing) {
+        console.log('[Player] Direct stream format unsupported by browser, falling back to hardware transmuxer...');
+        this.isTransmuxing = true;
+        this.subtitleEl.textContent = (this.subtitleEl.textContent || '') + ' • ⚡ TV Hardware Stream';
+        const curTime = this.video.currentTime || 0;
+        this.video.src = curTime > 5 ? `/api/transmux/${item.id}?start=${Math.floor(curTime)}` : `/api/transmux/${item.id}`;
+        this.video.play().catch(e => console.warn('[Player] Transmux play notice:', e.message));
+      }
+    };
 
     // Reset and attach subtitles
     while (this.video.firstChild) {

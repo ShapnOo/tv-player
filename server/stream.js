@@ -37,11 +37,8 @@ function streamVideo(filePath, req, res) {
   if (range) {
     const parts = range.replace(/bytes=/, '').split('-');
     const start = parseInt(parts[0], 10);
-
-    // 4MB chunk window for smooth TV streaming & instant scrub response
-    const CHUNK_SIZE = 4 * 1024 * 1024;
     const requestedEnd = parts[1] ? parseInt(parts[1], 10) : null;
-    const end = requestedEnd !== null ? requestedEnd : Math.min(start + CHUNK_SIZE - 1, fileSize - 1);
+    const end = requestedEnd !== null ? requestedEnd : fileSize - 1;
 
     // Boundary validation
     if (start >= fileSize || end >= fileSize || start > end) {
@@ -79,19 +76,25 @@ function streamVideo(filePath, req, res) {
       fileStream.destroy();
     });
   } else {
-    // Standard initial load header probe (first ~1MB)
-    const initialChunk = Math.min(fileSize - 1, 2 * 1024 * 1024);
-    const head = {
-      'Content-Range': `bytes 0-${initialChunk}/${fileSize}`,
-      'Accept-Ranges': 'bytes',
-      'Content-Length': initialChunk + 1,
+    // Standard full stream response (HTTP 200 OK when no Range header is supplied)
+    const headers = {
+      'Content-Length': fileSize,
       'Content-Type': contentType,
-      'Cache-Control': 'public, max-age=3600'
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'public, max-age=3600',
+      'Connection': 'keep-alive'
     };
 
-    res.writeHead(206, head);
-    const fileStream = fs.createReadStream(filePath, { start: 0, end: initialChunk });
+    res.writeHead(200, headers);
+    const fileStream = fs.createReadStream(filePath, { highWaterMark: 256 * 1024 });
     fileStream.pipe(res);
+
+    fileStream.on('error', (err) => {
+      console.error('[Stream] Error streaming full file:', err.message);
+      if (!res.headersSent) {
+        res.status(500).end();
+      }
+    });
 
     req.on('close', () => {
       fileStream.destroy();
@@ -106,6 +109,49 @@ function streamVideo(filePath, req, res) {
 function transmuxVideo(filePath, req, res) {
   if (!fs.existsSync(filePath)) {
     return res.status(404).send('Media file not found');
+  }
+
+  const stat = fs.statSync(filePath);
+  const fileSize = stat.size;
+  const range = req.headers.range;
+
+  // Handle Apple AVPlayer / CoreMedia Range probes to avoid error -12939
+  if (range) {
+    const parts = range.replace(/bytes=/, '').split('-');
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+    const chunkSize = (end - start) + 1;
+
+    // Fast-path for Apple AVPlayer 2-byte probe (Range: bytes=0-1)
+    if (range === 'bytes=0-1') {
+      res.writeHead(206, {
+        'Content-Type': 'video/mp4',
+        'Content-Range': `bytes 0-1/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': 2,
+        'Access-Control-Allow-Origin': '*'
+      });
+      return res.end(Buffer.from([0x00, 0x00]));
+    }
+
+    res.writeHead(206, {
+      'Content-Type': 'video/mp4',
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunkSize,
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
+  } else {
+    res.writeHead(200, {
+      'Content-Type': 'video/mp4',
+      'Content-Length': fileSize,
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
   }
 
   const startSeconds = parseFloat(req.query.start || '0');
@@ -126,13 +172,6 @@ function transmuxVideo(filePath, req, res) {
     '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
     'pipe:1'
   ];
-
-  res.writeHead(200, {
-    'Content-Type': 'video/mp4',
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*'
-  });
 
   const proc = spawn(ffmpeg, args, { stdio: ['ignore', 'pipe', 'ignore'] });
 
@@ -160,6 +199,47 @@ function transcodeVideo(filePath, req, res) {
     return res.status(404).send('Media file not found');
   }
 
+  const stat = fs.statSync(filePath);
+  const fileSize = stat.size;
+  const range = req.headers.range;
+
+  if (range) {
+    const parts = range.replace(/bytes=/, '').split('-');
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+    const chunkSize = (end - start) + 1;
+
+    if (range === 'bytes=0-1') {
+      res.writeHead(206, {
+        'Content-Type': 'video/mp4',
+        'Content-Range': `bytes 0-1/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': 2,
+        'Access-Control-Allow-Origin': '*'
+      });
+      return res.end(Buffer.from([0x00, 0x00]));
+    }
+
+    res.writeHead(206, {
+      'Content-Type': 'video/mp4',
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunkSize,
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
+  } else {
+    res.writeHead(200, {
+      'Content-Type': 'video/mp4',
+      'Content-Length': fileSize,
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
+  }
+
   const startSeconds = parseFloat(req.query.start || '0');
   const ffmpeg = getFfmpegPath();
 
@@ -180,13 +260,6 @@ function transcodeVideo(filePath, req, res) {
     '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
     'pipe:1'
   ];
-
-  res.writeHead(200, {
-    'Content-Type': 'video/mp4',
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*'
-  });
 
   const proc = spawn(ffmpeg, args, { stdio: ['ignore', 'pipe', 'ignore'] });
 

@@ -40,6 +40,7 @@
   // Hero Spotlight elements
   const heroSpotlight = document.getElementById('heroSpotlight');
   const heroBackdrop = document.getElementById('heroBackdrop');
+  const heroVideo = document.getElementById('heroVideo');
   const heroTitle = document.getElementById('heroTitle');
   const heroMeta = document.getElementById('heroMeta');
   const heroType = document.getElementById('heroType');
@@ -48,8 +49,13 @@
   const heroPlayBtn = document.getElementById('heroPlayBtn');
   const heroResumeBtn = document.getElementById('heroResumeBtn');
   const heroResumeTime = document.getElementById('heroResumeTime');
+  const heroAudioBtn = document.getElementById('heroAudioBtn');
+  const heroAudioMuted = document.getElementById('heroAudioMuted');
+  const heroAudioPlaying = document.getElementById('heroAudioPlaying');
 
   let featuredMedia = null;
+  let activeHeroVideoId = null;
+  let isHeroAudioMuted = true;
 
   // Initialize Application
   async function init() {
@@ -91,10 +97,18 @@
 
     connectSSE();
 
-    // Re-check immediately if TV or mobile device wakes from sleep
+    // Re-check immediately if TV or mobile device wakes from sleep & manage video performance
     window.addEventListener('focus', () => fetchMedia());
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) fetchMedia();
+      if (document.hidden) {
+        if (heroVideo) heroVideo.pause();
+      } else {
+        const playerOverlay = document.getElementById('playerOverlay');
+        if (heroVideo && (!playerOverlay || playerOverlay.style.display === 'none')) {
+          heroVideo.play().catch(() => {});
+        }
+        fetchMedia();
+      }
     });
   }
 
@@ -250,8 +264,23 @@
       });
     });
 
+    // Hero audio preview toggle
+    if (heroAudioBtn) {
+      heroAudioBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!heroVideo) return;
+        isHeroAudioMuted = !isHeroAudioMuted;
+        heroVideo.muted = isHeroAudioMuted;
+        if (heroAudioMuted && heroAudioPlaying) {
+          heroAudioMuted.style.display = isHeroAudioMuted ? 'block' : 'none';
+          heroAudioPlaying.style.display = isHeroAudioMuted ? 'none' : 'block';
+        }
+      });
+    }
+
     // Hero Play and Resume buttons
     heroPlayBtn.addEventListener('click', () => {
+      if (heroVideo) heroVideo.pause();
       if (featuredMedia && window.playerInstance) {
         if (featuredMedia.type === 'series') {
           window.location.href = `/series.html?id=${featuredMedia.id}`;
@@ -262,6 +291,7 @@
     });
 
     heroResumeBtn.addEventListener('click', () => {
+      if (heroVideo) heroVideo.pause();
       if (featuredMedia && window.playerInstance) {
         const itemToPlay = (featuredMedia.type === 'series' && featuredMedia.episodes)
           ? featuredMedia.episodes[0]
@@ -270,10 +300,13 @@
       }
     });
 
-    // Refresh progress indicators when video player closes
+    // Refresh progress indicators & resume hero preview when video player closes
     window.addEventListener('cinedata-closed', () => {
       renderCatalogs();
       updateHeroResume();
+      if (heroVideo && !document.hidden) {
+        heroVideo.play().catch(() => {});
+      }
     });
   }
 
@@ -325,34 +358,115 @@
     }
   }
 
-  // Render the Hero Spotlight Banner with the first movie or series
+  // Render the Hero Spotlight Banner with a RANDOM featured movie or series
   function renderFeaturedSpotlight() {
     if (moviesList.length === 0 && seriesList.length === 0) {
       heroSpotlight.style.display = 'none';
+      if (heroVideo) {
+        heroVideo.pause();
+        heroVideo.src = '';
+      }
       return;
     }
 
-    // Pick top movie or top series
-    featuredMedia = moviesList.length > 0 ? moviesList[0] : seriesList[0];
+    // Pick a random featured movie or series
+    if (!featuredMedia) {
+      if (moviesList.length > 0 && (seriesList.length === 0 || Math.random() < 0.75)) {
+        // Pick random movie
+        const randIdx = Math.floor(Math.random() * moviesList.length);
+        featuredMedia = moviesList[randIdx];
+      } else if (seriesList.length > 0) {
+        // Pick random series
+        const randIdx = Math.floor(Math.random() * seriesList.length);
+        featuredMedia = seriesList[randIdx];
+      }
+    }
+
+    if (!featuredMedia) return;
+
     heroSpotlight.style.display = 'flex';
     heroTitle.textContent = featuredMedia.title;
+
+    let targetVideoId = null;
+    let thumbId = null;
 
     if (featuredMedia.type === 'series') {
       heroType.textContent = 'TV Series';
       heroFormat.textContent = featuredMedia.format || 'HD';
       heroSize.textContent = featuredMedia.totalSizeFormatted || `${featuredMedia.episodesCount} Episodes`;
       heroMeta.textContent = `${featuredMedia.episodesCount} Episodes • Direct Mac Stream`;
-      const thumbId = featuredMedia.randomEpisodeId || (featuredMedia.episodes[0] && featuredMedia.episodes[0].id);
-      heroBackdrop.style.backgroundImage = `url('/api/thumbnail/${thumbId}')`;
+
+      // Dynamic episode preview
+      const previewEp = (featuredMedia.episodes && featuredMedia.episodes.length > 0)
+        ? featuredMedia.episodes[Math.floor(Math.random() * featuredMedia.episodes.length)]
+        : null;
+      targetVideoId = previewEp ? previewEp.id : featuredMedia.randomEpisodeId;
+      thumbId = targetVideoId || (featuredMedia.episodes && featuredMedia.episodes[0] && featuredMedia.episodes[0].id);
     } else {
       heroType.textContent = 'Movie';
-      heroFormat.textContent = featuredMedia.format;
-      heroSize.textContent = featuredMedia.sizeFormatted;
+      heroFormat.textContent = featuredMedia.format || 'HD';
+      heroSize.textContent = featuredMedia.sizeFormatted || '';
       heroMeta.textContent = `${featuredMedia.year ? featuredMedia.year + ' • ' : ''}${featuredMedia.hasSubtitles ? 'Subtitles Ready • ' : ''}Direct Mac Stream`;
-      heroBackdrop.style.backgroundImage = `url('/api/thumbnail/${featuredMedia.id}')`;
+      targetVideoId = featuredMedia.id;
+      thumbId = featuredMedia.id;
+    }
+
+    if (thumbId) {
+      heroBackdrop.style.backgroundImage = `url('/api/thumbnail/${thumbId}')`;
+    }
+
+    if (targetVideoId && targetVideoId !== activeHeroVideoId) {
+      activeHeroVideoId = targetVideoId;
+      initHeroBannerVideo(targetVideoId);
     }
 
     updateHeroResume();
+  }
+
+  function initHeroBannerVideo(videoId) {
+    if (!heroVideo || !videoId) return;
+
+    heroVideo.classList.remove('loaded');
+    heroVideo.muted = isHeroAudioMuted;
+    heroVideo.defaultMuted = isHeroAudioMuted;
+    heroVideo.playsInline = true;
+    heroVideo.setAttribute('muted', '');
+    heroVideo.setAttribute('playsinline', '');
+    heroVideo.setAttribute('webkit-playsinline', 'true');
+
+    // Start with direct byte-range stream for 0% CPU
+    heroVideo.src = `/api/stream/${videoId}`;
+
+    heroVideo.onplaying = () => {
+      heroVideo.classList.add('loaded');
+    };
+
+    heroVideo.onerror = () => {
+      if (!heroVideo.src.includes('/api/transmux/')) {
+        // Fallback to fragmented MP4 transmuxer for browser MKV container decoding
+        console.log('[Hero Preview] Direct format unsupported by browser, switching to hardware transmuxer...');
+        heroVideo.src = `/api/transmux/${videoId}?start=30`;
+        heroVideo.play().catch(() => {});
+      } else {
+        console.warn('[Hero Preview] Video playback error, displaying backdrop poster:', heroVideo.error);
+        heroVideo.classList.remove('loaded');
+      }
+    };
+
+    const playPromise = heroVideo.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        if (!heroVideo.src.includes('/api/transmux/')) {
+          heroVideo.src = `/api/transmux/${videoId}?start=30`;
+          heroVideo.play().then(() => heroVideo.classList.add('loaded')).catch(() => {});
+        }
+      });
+    }
+
+    heroVideo.onended = () => {
+      heroVideo.currentTime = 30;
+      heroVideo.play().catch(() => {});
+    };
   }
 
   function updateHeroResume() {
@@ -503,6 +617,7 @@
     `;
 
     const playAction = () => {
+      if (heroVideo) heroVideo.pause();
       if (window.playerInstance) {
         window.playerInstance.play(item, playlist);
       }
@@ -571,6 +686,7 @@
     `;
 
     const openAction = () => {
+      if (heroVideo) heroVideo.pause();
       window.location.href = `/series.html?id=${series.id}`;
     };
 

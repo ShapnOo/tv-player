@@ -68,7 +68,7 @@
           <span id="playFirstText">Play Episode 1</span>
         </button>
 
-        <button type="button" class="billboard-btn btn-billboard-resume is-hidden" id="btnResumeSeries">
+        <button type="button" class="billboard-btn btn-billboard-resume" id="btnResumeSeries" style="display: none;">
           <svg viewBox="0 0 24 24" fill="currentColor">
             <polygon points="6 4 19 12 6 20 6 4"></polygon>
           </svg>
@@ -82,8 +82,7 @@
             <line x1="23" y1="9" x2="17" y2="15"></line>
             <line x1="17" y1="9" x2="23" y2="15"></line>
           </svg>
-          <svg id="iconAudioPlaying" class="is-hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
+          <svg id="iconAudioPlaying" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
           </svg>
@@ -176,7 +175,7 @@
   </dialog>
 
   <!-- Video Theater Player Overlay -->
-  <div class="player-overlay is-hidden" id="playerOverlay">
+  <div class="player-overlay" id="playerOverlay" style="display: none;">
     <div class="player-header">
       <div class="player-title-info">
         <h3 id="playerTitle">Cyberpunk 2077 Demo</h3>
@@ -200,7 +199,7 @@
 
     <!-- Video Viewport -->
     <div class="video-container" id="videoContainer">
-      <video id="mainVideo" preload="metadata">
+      <video id="mainVideo" playsinline preload="metadata">
         <!-- Track added dynamically for subtitles -->
       </video>
 
@@ -229,7 +228,7 @@
               <svg id="ctrlPlayIcon" viewBox="0 0 24 24" fill="currentColor">
                 <polygon points="5 3 19 12 5 21 5 3"></polygon>
               </svg>
-              <svg id="ctrlPauseIcon" class="is-hidden" viewBox="0 0 24 24" fill="currentColor">
+              <svg id="ctrlPauseIcon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
                 <rect x="6" y="4" width="4" height="16"></rect>
                 <rect x="14" y="4" width="4" height="16"></rect>
               </svg>
@@ -256,8 +255,7 @@
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                   <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                 </svg>
-                <svg id="ctrlVolumeMuted" class="is-hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  stroke-width="2">
+                <svg id="ctrlVolumeMuted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                   <line x1="23" y1="9" x2="17" y2="15"></line>
                   <line x1="17" y1="9" x2="23" y2="15"></line>
@@ -277,7 +275,7 @@
 
           <div class="controls-right">
             <!-- Next Episode (if series) -->
-            <button type="button" class="control-btn next-ep-btn is-hidden" id="btnNextEpisode" title="Next Episode">
+            <button type="button" class="control-btn next-ep-btn" id="btnNextEpisode" style="display: none;" title="Next Episode">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <polygon points="5 4 15 12 5 20 5 4"></polygon>
                 <rect x="17" y="4" width="2" height="16"></rect>
@@ -314,8 +312,7 @@
                 <path
                   d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
               </svg>
-              <svg id="fsExitIcon" class="is-hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2">
+              <svg id="fsExitIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
                 <path
                   d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
               </svg>
